@@ -1,0 +1,2910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Next.js + Hono + Prisma — Senior Migration Curriculum</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+<style>
+:root {
+  --bg: #0d1117;
+  --bg-elev: #161b22;
+  --bg-elev-2: #1c232c;
+  --border: #30363d;
+  --border-soft: #21262d;
+  --text: #c9d1d9;
+  --text-muted: #8b949e;
+  --text-strong: #f0f6fc;
+  --accent: #58a6ff;
+  --accent-2: #a371f7;
+  --success: #3fb950;
+  --warn: #d29922;
+  --danger: #f85149;
+  --trophy: #e3b341;
+  --code-bg: #161b22;
+  --max-w: 920px;
+  --sidebar-w: 280px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: 100vh;
+}
+aside#sidebar {
+  background: var(--bg-elev);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 1rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  font-size: 14px;
+}
+aside#sidebar h1 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem;
+  font-weight: 600;
+}
+aside#sidebar nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+aside#sidebar nav > ul > li {
+  margin: 1rem 0 0;
+}
+aside#sidebar nav a {
+  color: var(--text);
+  text-decoration: none;
+  display: block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border-left: 2px solid transparent;
+}
+aside#sidebar nav a:hover {
+  background: var(--bg-elev-2);
+  color: var(--text-strong);
+}
+aside#sidebar nav a.active {
+  border-left-color: var(--accent);
+  color: var(--text-strong);
+  background: var(--bg-elev-2);
+}
+aside#sidebar nav .phase-title {
+  font-weight: 600;
+  color: var(--text-strong);
+  margin-top: 0.5rem;
+}
+aside#sidebar nav ul ul {
+  padding-left: 0.75rem;
+  margin-top: 0.25rem;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+aside#sidebar nav ul ul a {
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+aside#sidebar nav ul ul a:hover { color: var(--text); }
+
+/* Keyboard focus — was completely missing */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* Skip-to-content link for keyboard users */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  background: var(--accent);
+  color: var(--bg);
+  padding: 0.5rem 1rem;
+  z-index: 999;
+  text-decoration: none;
+  font-weight: 600;
+}
+.skip-link:focus { top: 0; }
+.progress-row {
+  margin: 1rem 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.progress-bar {
+  background: var(--bg-elev-2);
+  border-radius: 4px;
+  height: 6px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.progress-fill { background: var(--accent); height: 100%; width: 0%; transition: width 0.3s; }
+
+main {
+  padding: 2rem 3rem;
+  max-width: calc(var(--max-w) + 6rem);
+}
+h1, h2, h3, h4 { color: var(--text-strong); line-height: 1.25; }
+h1 { font-size: 2rem; margin: 0 0 0.5rem; }
+h2 { font-size: 1.75rem; margin: 3rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.35rem; margin: 2rem 0 0.75rem; }
+h4 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+p { margin: 0.75rem 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+  color: #e6edf3;
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.5;
+}
+pre code { background: transparent; padding: 0; }
+
+.hero {
+  background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(163,113,247,0.08));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem 1.75rem;
+  margin: 1.5rem 0 2rem;
+}
+.hero p { color: var(--text); }
+.tag {
+  display: inline-block;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-right: 6px;
+}
+.tag.trophy { background: rgba(227,179,65,0.12); border-color: var(--trophy); color: var(--trophy); }
+.tag.warn { background: rgba(210,153,34,0.12); border-color: var(--warn); color: var(--warn); }
+.tag.danger { background: rgba(248,81,73,0.12); border-color: var(--danger); color: var(--danger); }
+.tag.success { background: rgba(63,185,80,0.12); border-color: var(--success); color: var(--success); }
+
+.concept {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+}
+.concept.trophy { border-left: 4px solid var(--trophy); }
+.concept-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.concept-head h3 { margin: 0; flex: 1; min-width: 0; }
+.concept-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 0.5rem; align-items: center; }
+.concept-checkbox {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+.concept-checkbox:checked { background: var(--success); border-color: var(--success); }
+.concept-checkbox:checked::after {
+  content: "✓";
+  color: white;
+  font-weight: bold;
+  position: absolute;
+  top: -3px;
+  left: 3px;
+  font-size: 16px;
+}
+
+details.exercise {
+  margin: 1rem 0;
+  background: var(--bg-elev-2);
+  border-radius: 6px;
+  border: 1px solid var(--border-soft);
+}
+details.exercise > summary {
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+details.exercise > summary::before {
+  content: "▶";
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+details.exercise[open] > summary::before { transform: rotate(90deg); }
+details.exercise > div.exercise-body {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--border-soft);
+}
+.exercise-step {
+  margin: 0.75rem 0;
+  padding-left: 1rem;
+  border-left: 2px solid var(--border);
+}
+.exercise-step h5 {
+  margin: 0.5rem 0 0.25rem;
+  color: var(--text-strong);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.exercise-step.failure h5 { color: var(--danger); }
+.exercise-step.verify h5 { color: var(--success); }
+.exercise-step.prereq h5 { color: var(--warn); }
+
+.resource {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.resource-icon { font-size: 18px; flex-shrink: 0; }
+.resource-content { flex: 1; }
+.resource-title { font-weight: 600; color: var(--text-strong); }
+.resource-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+.video-embed {
+  position: relative;
+  padding-top: 56.25%;
+  margin: 1rem 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: black;
+}
+.video-embed iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.alert {
+  border-left: 3px solid;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 6px 6px 0;
+}
+.alert.warn { background: rgba(210,153,34,0.08); border-color: var(--warn); }
+.alert.danger { background: rgba(248,81,73,0.08); border-color: var(--danger); }
+.alert.info { background: rgba(88,166,255,0.08); border-color: var(--accent); }
+.alert.success { background: rgba(63,185,80,0.08); border-color: var(--success); }
+.alert strong { color: var(--text-strong); }
+
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 14px; }
+th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--text-strong); background: var(--bg-elev); font-weight: 600; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin: 1.5rem 0 1rem; }
+.tab-btn {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  font-family: inherit;
+  font-size: 14px;
+}
+.tab-btn.active { color: var(--text-strong); border-bottom-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+ul, ol { padding-left: 1.5rem; }
+li { margin: 0.25rem 0; }
+
+footer.page-footer {
+  border-top: 1px solid var(--border);
+  margin-top: 4rem;
+  padding-top: 2rem;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  body { grid-template-columns: 1fr; }
+  aside#sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border); }
+  main { padding: 1.5rem 1.25rem; }
+}
+</style>
+</head>
+<body>
+
+<a href="#intro" class="skip-link">Skip to content</a>
+
+<aside id="sidebar" aria-label="Curriculum navigation">
+  <p class="sidebar-label" style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 0.75rem; font-weight: 600;">Curriculum</p>
+  <div class="progress-row">
+    <div><span id="progress-count">0</span> / <span id="progress-total">0</span> exercises complete</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+  <nav>
+    <ul>
+      <li><a href="#intro" class="phase-title">Start here</a></li>
+      <li><a href="#corrections" class="phase-title">2026 corrections</a></li>
+      <li>
+        <a href="#prereqs" class="phase-title">Prerequisites</a>
+        <ul>
+          <li><a href="#orchestration-choice">Orchestration: Aspire or WSL2</a></li>
+          <li><a href="#shell-stack">Shell stack (WSL2 path)</a></li>
+          <li><a href="#docker-compose">docker-compose.yml</a></li>
+          <li><a href="#secrets-tunnels">Secrets &amp; tunnels</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="#editor" class="phase-title">Editor setup</a>
+        <ul>
+          <li><a href="#editor-vscode">VS Code path</a></li>
+          <li><a href="#editor-neovim">Neovim path</a></li>
+        </ul>
+      </li>
+      <li><a href="#phase-0" class="phase-title">Phase 0 — Toolchain</a></li>
+      <li>
+        <a href="#phase-1" class="phase-title">Phase 1 — Hono</a>
+        <ul id="nav-phase-1"></ul>
+      </li>
+      <li>
+        <a href="#phase-2" class="phase-title">Phase 2 — Prisma</a>
+        <ul id="nav-phase-2"></ul>
+      </li>
+      <li>
+        <a href="#phase-3" class="phase-title">Phase 3 — Next.js + RSC</a>
+        <ul id="nav-phase-3"></ul>
+      </li>
+      <li>
+        <a href="#phase-4" class="phase-title">Phase 4 — Auth.js v5</a>
+        <ul id="nav-phase-4"></ul>
+      </li>
+      <li>
+        <a href="#phase-5" class="phase-title">Phase 5 — Cross-service</a>
+        <ul id="nav-phase-5"></ul>
+      </li>
+      <li>
+        <a href="#phase-6" class="phase-title">Phase 6 — Production</a>
+        <ul id="nav-phase-6"></ul>
+      </li>
+      <li><a href="#reading" class="phase-title">Reading list</a></li>
+    </ul>
+  </nav>
+</aside>
+
+<main>
+
+<header>
+  <h1 id="intro">Next.js 16 + Hono + Prisma + Auth.js v5</h1>
+  <p style="color: var(--text-muted); margin-top: 0;">A migration curriculum for a senior C# / .NET + functional React/TS developer. Companion to <code>ROADMAP.md</code>.</p>
+
+  <div class="hero">
+    <h3 style="margin-top: 0;">How this works</h3>
+    <p>Every exercise <strong>triggers the failure mode first</strong>. If you complete an exercise without seeing the red error before the green tick, you skipped a step.</p>
+    <p>Time budgets account for setup. Nine exercises are marked <span class="tag trophy">⭐</span>; these are the highest-value ones to prioritise.</p>
+    <p><strong>Total budget:</strong> ~39 hours of focused work, plus <strong>5–7 hours</strong> of one-time environment setup (GitHub OAuth registration, Cloudflare account setup, font installation, and editor setup). At 2 hrs/day, four weeks. At 4 hrs/day, ten working days.</p>
+  </div>
+</header>
+
+<section id="corrections">
+  <h2>Critical 2026 notes (read first)</h2>
+  <p>Three facts that are easy to get wrong; propagating any wastes hours. Verify each first.</p>
+
+  <div class="alert danger">
+    <strong>The Hono JWK middleware CVE is <code>CVE-2026-22818</code></strong> (advisory <a href="https://github.com/honojs/hono/security/advisories/GHSA-3vhc-576x-3qv4" target="_blank" rel="noopener">GHSA-3vhc-576x-3qv4</a>), fixed in Hono 4.11.4+. Note that CVE-2026-27804 is a different package entirely (a Parse Server vulnerability). When auditing your Hono version, search the GHSA ID, not that CVE.
+  </div>
+
+  <div class="alert warn">
+    <strong><code>@auth/core/jwt</code> <code>decode()</code> takes <code>{ token, secret, salt }</code></strong>, not <code>{ token, secret }</code>. The <code>salt</code> parameter is required and used together with the secret to derive the decryption key. Omitting it produces an unhelpful decryption error. See the <a href="https://authjs.dev/reference/core/jwt" target="_blank" rel="noopener">authjs.dev/reference/core/jwt</a> reference.
+  </div>
+
+  <div class="alert info">
+    <strong><code>revalidateTag(tag)</code> single-arg is deprecated with a TS warning</strong>, not a hard compile error. It still works in Next.js 16.2.6. Use the two-arg form <code>revalidateTag(tag, profile)</code> in all new code; don't expect the compiler to force you to fix legacy calls.
+  </div>
+
+</section>
+
+<section id="prereqs">
+  <h2>Prerequisites: set these up once</h2>
+  <p>Several mid-curriculum exercises assume infrastructure is already in place. Set this up in one batch up front. Allocate <strong>~4 hours</strong> end-to-end on a fresh Windows 11 box.</p>
+
+  <h3 id="orchestration-choice">Choose your orchestration path</h3>
+  <p>The "develop on Windows-native PowerShell" pain is mostly an <em>orchestration</em> problem: running Postgres + PgBouncer + Redis + Hono + Next.js together with health-check ordering, service discovery, and unified logs. Two paths solve it differently. Both lead to the same exercises.</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-orchestration="aspire">Path A: .NET Aspire AppHost (Windows-native)</button>
+    <button class="tab-btn" data-orchestration="wsl">Path B: WSL2 + process-compose</button>
+  </div>
+
+  <div class="tab-content active" id="orchestration-aspire">
+    <h4>Path A: Aspire AppHost orchestrating npm apps + containers</h4>
+    <p>If you have .NET on this machine and already know Aspire, use this path. Aspire's <code>AddNpmApp</code> + <code>WithReference</code> + <code>WaitFor</code> replaces <code>docker-compose.yml</code> + <code>process-compose</code> + manual env-var wiring with one C# file you can debug. The dashboard at <code>https://localhost:18888</code> gives unified logs, traces, and metrics across every resource, with more depth than process-compose's TUI.</p>
+
+    <div class="alert warn">
+      <strong>What Aspire does NOT solve:</strong>
+      <ul style="margin: 0.5rem 0;">
+        <li><code>pnpm install</code> on NTFS is ~2× slower than ext4 (still better than the 5× <code>/mnt/c</code> crossover penalty)</li>
+        <li><strong>Enable Windows Developer Mode</strong> (Settings → Privacy &amp; Security → For Developers) or pnpm's symlinks fail with <code>EPERM: A required privilege is not held by the client</code></li>
+        <li>CRLF/LF is not solved by <code>.gitattributes</code> alone. See the dedicated section below: the Git for Windows installer defaults <code>core.autocrlf=true</code>, which silently fights the attribute file</li>
+        <li>Next.js HMR on NTFS has edge cases on very large component trees</li>
+        <li>Prisma <code>binaryTargets</code> still needs Windows + Linux entries (same as WSL2 path)</li>
+      </ul>
+    </div>
+
+    <h5>CRLF/LF setup (<code>.gitattributes</code> alone is insufficient)</h5>
+    <p>The most common Windows-native failure mode is Husky pre-commit hooks dying with <code>/usr/bin/env: 'bash\r': No such file or directory</code>. The hook file was committed with CRLF endings before <code>.gitattributes</code> normalized them, and bash chokes on the <code>\r</code> in the shebang.</p>
+
+    <p><code>.gitattributes</code> is necessary but not sufficient. The full checklist:</p>
+
+    <ol>
+      <li>
+        <strong>Repo root <code>.gitattributes</code>:</strong>
+<pre><code class="language-bash"># Default: text files normalize to LF in repo and on checkout
+* text=auto eol=lf
+
+# Explicit binary list — prevents Git from mangling them
+*.png   binary
+*.jpg   binary
+*.ico   binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary
+
+# Shell scripts and hooks MUST be LF regardless of platform
+*.sh    text eol=lf
+.husky/* text eol=lf</code></pre>
+      </li>
+      <li>
+        <strong>Repo root <code>.editorconfig</code>:</strong>
+<pre><code class="language-ini">root = true
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+indent_style = space
+indent_size = 2</code></pre>
+      </li>
+      <li>
+        <strong>Every dev runs this once</strong> (Git for Windows defaults <code>autocrlf=true</code>, which overrides this):
+<pre><code class="language-bash">git config --global core.autocrlf false
+git config --global core.eol lf</code></pre>
+      </li>
+      <li>
+        <strong>One-time renormalization commit after <code>.gitattributes</code> is committed:</strong>
+<pre><code class="language-bash">git add --renormalize .
+git commit -m "chore: normalize line endings"</code></pre>
+        Without this, existing files keep their original endings; the attributes only affect files Git touches afterward.
+      </li>
+      <li>
+        <strong>Install Husky <em>after</em> steps 1–4 are merged.</strong> Then verify each hook file:
+<pre><code class="language-bash">file .husky/pre-commit
+# Want: ".husky/pre-commit: ASCII text"
+# Bad:  ".husky/pre-commit: ASCII text, with CRLF line terminators"</code></pre>
+      </li>
+      <li>
+        <strong>Workspace <code>.vscode/settings.json</code>:</strong>
+<pre><code class="language-json">{
+  "files.eol": "\n"
+}</code></pre>
+      </li>
+      <li>
+        <strong>CI safety net.</strong> Add a job step that fails the build on stray CRLF in tracked text files:
+<pre><code class="language-bash">! git ls-files --eol | grep -E 'i/crlf'</code></pre>
+        Without this, a teammate who joins later without running step 3 silently reintroduces CRLF, and you find out via confusing hook failures weeks later.
+      </li>
+    </ol>
+
+    <p>All seven steps are required. Skipping step 3 or step 7 reintroduces CRLF the moment a new teammate joins or a Bash-shebanged tool is added to <code>scripts/</code>.</p>
+
+    <h5>The AppHost.cs</h5>
+    <p>Create an <code>orchestrator/</code> folder at your monorepo root with a minimal Aspire AppHost project. The following covers the whole stack:</p>
+
+<pre><code class="language-csharp">// orchestrator/AppHost.cs
+var builder = DistributedApplication.CreateBuilder(args);
+
+// Postgres 17 — exposed on host port 5433 (avoids collision with any system pg)
+var postgres = builder.AddPostgres("postgres", port: 5433)
+    .WithDataVolume()       // named volume, persists across restarts
+    .WithPgAdmin();         // optional: spins up pgAdmin alongside, served via dashboard
+
+var appdb = postgres.AddDatabase("appdb");
+
+// PgBouncer in transaction mode — sets up the Phase 2 footgun exercise
+var pgbouncer = builder.AddContainer("pgbouncer", "edoburu/pgbouncer")
+    .WithEnvironment("DB_HOST", postgres.Resource.Name)
+    .WithEnvironment("DB_USER", "postgres")
+    .WithEnvironment("DB_PASSWORD", postgres.Resource.PasswordParameter)
+    .WithEnvironment("DB_NAME", "appdb")
+    .WithEnvironment("POOL_MODE", "transaction")
+    .WithEnvironment("AUTH_TYPE", "scram-sha-256")
+    .WithEndpoint(targetPort: 5432, port: 6432, name: "pgbouncer")
+    .WaitFor(postgres);
+
+// Redis — used in the Phase 5 deep-dive (JWT revocation blocklist)
+var redis = builder.AddRedis("redis", port: 6379)
+    .WithDataVolume();
+
+// Hono backend (Node) — Aspire treats it as an npm app
+var api = builder.AddNpmApp("api", "../services/api", "dev")
+    .WithReference(appdb)              // injects ConnectionStrings__appdb
+    .WithReference(redis)              // injects ConnectionStrings__redis
+    .WithHttpEndpoint(port: 3001, env: "PORT")
+    .WaitFor(postgres)
+    .WaitFor(redis)
+    .PublishAsDockerFile();            // for prod deploys
+
+// Next.js frontend — also npm app
+var web = builder.AddNpmApp("web", "../apps/web", "dev")
+    .WithReference(api)                // service discovery: api URL injected
+    .WithReference(appdb)              // direct Prisma access from RSCs
+    .WithHttpEndpoint(port: 3000, env: "PORT")
+    .WaitFor(api)
+    .PublishAsDockerFile();
+
+builder.Build().Run();</code></pre>
+
+    <h5>Run it</h5>
+<pre><code class="language-powershell">cd orchestrator
+dotnet run
+# Aspire dashboard opens automatically at https://localhost:18888
+# All resources (postgres, pgbouncer, redis, api, web) appear with live logs</code></pre>
+
+    <h5>Wiring the Node side</h5>
+    <p>Aspire injects connection strings as <code>ConnectionStrings__&lt;name&gt;</code> env vars. In Hono / Next.js, read them like any other env var. Use the Zod env-validation pattern from Phase 1 #8:</p>
+
+<pre><code class="language-typescript">// services/api/src/config.ts
+const envSchema = z.object({
+  ConnectionStrings__appdb: z.string().url(),
+  ConnectionStrings__redis: z.string(),
+  PORT: z.coerce.number().default(3001),
+});
+export const config = envSchema.parse(process.env);
+// Then in Prisma: process.env.DATABASE_URL = config.ConnectionStrings__appdb</code></pre>
+
+    <h5>Prerequisites for Path A</h5>
+    <ul>
+      <li>.NET 10 SDK installed (you almost certainly have this)</li>
+      <li>Docker Desktop OR Rancher Desktop for the container resources</li>
+      <li><strong>Windows Developer Mode enabled</strong> for pnpm symlinks (one-time)</li>
+      <li>fnm + Node 24 LTS + pnpm 11 installed on Windows directly (use <code>winget install Schniz.fnm</code>, then <code>fnm install --lts</code> from PowerShell)</li>
+      <li><code>.gitattributes</code> with <code>* text=auto eol=lf</code> at repo root</li>
+    </ul>
+  </div>
+
+  <div class="tab-content" id="orchestration-wsl">
+    <h4>Path B: WSL2 + process-compose</h4>
+    <p>Take this path if you don't have .NET on this machine, if a Mac/Linux teammate joins the project, or if you want Linux dev parity with the production container environment. Tools are all native and file performance is optimal.</p>
+
+    <div class="alert danger">
+      <strong>Performance footgun:</strong> Never store project files under <code>/mnt/c/...</code>. The WSL2 9P bridge to NTFS is 3–5× slower for <code>pnpm install</code> and <code>prisma generate</code>. Keep everything under <code>~/projects/</code> inside WSL2's native ext4. Access from Windows via <code>\\wsl$\Ubuntu\home\&lt;user&gt;\projects</code>.
+    </div>
+
+    <pre><code class="language-powershell"># In PowerShell (admin)
+wsl --install -d Ubuntu-24.04
+# Reboot, set username/password, then continue inside WSL2</code></pre>
+    <p>The shell stack, install script, docker-compose, and process-compose orchestration below are all part of this path.</p>
+  </div>
+
+  <h3 id="shell-stack">Shell stack (inside WSL2)</h3>
+  <p>Shell stack: Zsh + Oh My Zsh + Starship. Avoid Fish; its non-POSIX syntax breaks copy-pasted shell snippets. Use WezTerm on Windows as the terminal emulator (GPU-accelerated, with a Lua config consistent with Neovim).</p>
+
+  <div class="alert warn">
+    <strong>Two-stage install:</strong> Run Stage 1 in your default bash WSL2 session. Then close and reopen your terminal so zsh loads with fnm in PATH. Then run Stage 2 in the new zsh session. Sourcing <code>.zshrc</code> from inside a bash script does not properly inject fnm into the current shell.
+  </div>
+
+  <details class="exercise">
+    <summary>Stage 1: system + shell (bash, inside WSL2 Ubuntu)</summary>
+    <div class="exercise-body">
+<pre><code class="language-bash"># Core deps (note: postgresql-client-17 to match Postgres 17 server)
+sudo apt update &amp;&amp; sudo apt upgrade -y
+sudo apt install -y curl git build-essential unzip zsh direnv \
+  postgresql-client-17 btop fd-find ripgrep eza bat zoxide gh
+
+# Zsh + Oh My Zsh
+chsh -s $(which zsh)
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+
+# Starship
+curl -sS https://starship.rs/install.sh | sh
+
+# fnm (Node version manager)
+curl -fsSL https://fnm.vercel.app/install | bash
+
+# Append shell config to ~/.zshrc
+cat &gt;&gt; ~/.zshrc &lt;&lt;'EOF'
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+eval "$(starship init zsh)"
+eval "$(direnv hook zsh)"
+eval "$(zoxide init zsh)"
+eval "$(fnm env --use-on-cd --shell zsh)"
+alias ls='eza --icons'
+alias cat='bat'
+alias cd='z'
+EOF
+
+echo "---"
+echo "Stage 1 complete. CLOSE this terminal and open a fresh one (which will start zsh),"
+echo "then run Stage 2."</code></pre>
+    </div>
+  </details>
+
+  <details class="exercise">
+    <summary>Stage 2: Node, Git tooling, tunneling (zsh, fresh terminal)</summary>
+    <div class="exercise-body">
+<pre><code class="language-bash"># Verify shell + fnm are live
+echo $SHELL                    # should be /usr/bin/zsh
+fnm --version                  # should print version, not "command not found"
+
+# Node LTS + pnpm 11
+fnm install --lts &amp;&amp; fnm use --lts
+corepack enable
+corepack prepare pnpm@latest-11 --activate   # --activate sets the global shim, no package.json needed
+
+# Global Node tools
+pnpm add -g prisma vercel turbo autocannon
+
+# lazygit  (note: lowercase linux_x86_64 — capital L 404s)
+LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
+curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_linux_x86_64.tar.gz"
+tar xf lazygit.tar.gz lazygit &amp;&amp; sudo install lazygit /usr/local/bin &amp;&amp; rm lazygit.tar.gz
+
+# delta (git diff replacement)
+DELTA_VERSION=$(curl -s "https://api.github.com/repos/dandavison/delta/releases/latest" | grep -Po '"tag_name": "\K[^"]*')
+curl -Lo delta.deb "https://github.com/dandavison/delta/releases/latest/download/git-delta_${DELTA_VERSION}_amd64.deb"
+sudo dpkg -i delta.deb &amp;&amp; rm delta.deb
+
+# Wire delta into ~/.gitconfig
+git config --global core.pager delta
+git config --global delta.navigate true
+git config --global delta.side-by-side true
+
+# process-compose (orchestrates pnpm dev with health-check ordering)
+curl -Lo process-compose.tar.gz https://github.com/F1bonacc1/process-compose/releases/latest/download/process-compose_linux_amd64.tar.gz
+tar xf process-compose.tar.gz &amp;&amp; sudo install process-compose /usr/local/bin &amp;&amp; rm process-compose*
+
+# cloudflared (for OAuth callback tunneling)
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+chmod +x cloudflared &amp;&amp; sudo mv cloudflared /usr/local/bin/
+
+# GitHub CLI auth
+gh auth login</code></pre>
+    </div>
+  </details>
+
+  <details class="exercise">
+    <summary>Stage 3 (Neovim path only): clipboard bridge + Neovim binary</summary>
+    <div class="exercise-body">
+<pre><code class="language-bash"># win32yank — bridges WSL2 Neovim clipboard to Windows host
+# Without this, `y` in Neovim never reaches Windows' clipboard
+curl -sLo /tmp/win32yank.zip https://github.com/equalsraf/win32yank/releases/latest/download/win32yank-x64.zip
+unzip -d /tmp/win32yank /tmp/win32yank.zip
+sudo install -m 755 /tmp/win32yank/win32yank.exe /usr/local/bin/
+
+# Neovim 0.12+ stable (note: nvim-linux-x86_64, NOT the old neovim-linux64 name)
+curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+tar -xzf nvim-linux-x86_64.tar.gz
+sudo install -m 755 nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+
+# LazyVim starter (backs up any existing config)
+git clone https://github.com/LazyVim/starter ~/.config/nvim
+rm -rf ~/.config/nvim/.git
+echo "Launch nvim — plugins install automatically on first open."</code></pre>
+    </div>
+  </details>
+
+  <h3 id="docker-compose">Docker stack: Postgres + PgBouncer + Redis</h3>
+  <p>Use <strong>Rancher Desktop</strong> (free, Apache 2.0) over Docker Desktop; Docker Desktop requires a paid license above the 250-employee / $10M-revenue threshold. Both use WSL2 as the VM backend. In Rancher Desktop → Preferences → WSL Integration → enable Ubuntu-24.04, then <code>docker --version</code> works inside WSL2.</p>
+
+  <p>Drop this <code>docker-compose.yml</code> in <code>dev/</code> and you have your Phase 2 and Phase 6 infrastructure ready. The PgBouncer <code>POOL_MODE: transaction</code> is intentional: it sets up the Phase 2 footgun exercise.</p>
+
+  <pre><code class="language-yaml"># dev/docker-compose.yml — usage: docker compose -f dev/docker-compose.yml up -d
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpassword}
+      POSTGRES_DB: ${POSTGRES_DB:-appdb}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    ports: ["5433:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dev} -d ${POSTGRES_DB:-appdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgbouncer:
+    # bitnami/pgbouncer moved behind a paid subscription in 2024-2025 — using the official
+    # pgbouncer org image instead. Note: env var names differ from the old bitnami scheme.
+    image: edoburu/pgbouncer:latest
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-dev}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-devpassword}
+      DB_NAME: ${POSTGRES_DB:-appdb}
+      POOL_MODE: transaction              # the footgun: Prisma interactive tx breaks here
+      MAX_CLIENT_CONN: 100
+      DEFAULT_POOL_SIZE: 10
+      AUTH_TYPE: scram-sha-256
+    ports: ["6432:5432"]                  # exposed as 6432 on host, container's pgbouncer listens on 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-devredis}
+    volumes: [redisdata:/data]
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-devredis}", "ping"]
+      interval: 10s
+
+volumes:
+  pgdata: {}
+  redisdata: {}</code></pre>
+
+  <h3 id="secrets-tunnels">Secrets, OAuth tunnel, API client, Postgres GUI</h3>
+
+  <table>
+    <thead><tr><th>Tool</th><th>Pick</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>API client (ad-hoc)</td><td><a href="https://www.usebruno.com/" target="_blank" rel="noopener">Bruno</a></td><td>Plain <code>.bru</code> files in git. No cloud, no account. Postman went cloud-only; Insomnia requires login.</td></tr>
+      <tr><td>Postgres GUI</td><td><a href="https://www.beekeeperstudio.io/" target="_blank" rel="noopener">Beekeeper Studio</a> Community</td><td>Free, single-window, no DBeaver/Eclipse overhead.</td></tr>
+      <tr><td>OAuth callback tunnel</td><td><a href="https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/" target="_blank" rel="noopener">cloudflared</a> (quick-tunnel first; named tunnel for stable URL)</td><td>Quick-tunnel needs no account but the URL rotates. A named tunnel needs a Cloudflare account plus a domain on Cloudflare DNS (~30-45min setup), and is only worth it when you want a stable OAuth callback URL.</td></tr>
+      <tr><td>Process orchestration</td><td><a href="https://github.com/F1bonacc1/process-compose" target="_blank" rel="noopener">process-compose</a></td><td>Health-check-aware startup ordering. <code>concurrently</code> has no dependency model.</td></tr>
+      <tr><td>Env loading</td><td><a href="https://direnv.net/" target="_blank" rel="noopener">direnv</a> + <code>.env.local</code></td><td>Auto-load on cd-in. For shared secrets across team: <a href="https://www.doppler.com/" target="_blank" rel="noopener">Doppler</a> ($4/user/mo).</td></tr>
+      <tr><td>Git TUI</td><td><a href="https://github.com/jesseduffield/lazygit" target="_blank" rel="noopener">lazygit</a></td><td>Interactive rebase, line-staging, stash management, all keyboard-driven.</td></tr>
+    </tbody>
+  </table>
+
+  <details class="exercise">
+    <summary>Smoke test: verify the foundation before starting Phase 1</summary>
+    <div class="exercise-body">
+      <ul>
+        <li><code>wsl --list --verbose</code> shows Ubuntu-24.04, version 2</li>
+        <li><code>echo $SHELL</code> inside WSL2 returns <code>/usr/bin/zsh</code></li>
+        <li><code>node --version</code> returns LTS (v22.x+)</li>
+        <li><code>pnpm --version</code> returns 11.x</li>
+        <li><code>docker ps</code> works inside WSL2</li>
+        <li><code>docker compose -f dev/docker-compose.yml up -d</code> starts cleanly</li>
+        <li><code>psql postgresql://dev:devpassword@localhost:5433/appdb</code> connects directly</li>
+        <li><code>psql postgresql://dev:devpassword@localhost:6432/appdb</code> connects via PgBouncer</li>
+        <li><code>cloudflared tunnel --url http://localhost:3000</code> (quick-tunnel, no account needed) produces a public HTTPS URL. The URL rotates on restart; only set up a <em>named</em> tunnel when you need a stable OAuth callback</li>
+        <li>Project files are under <code>~/projects/</code>, and <code>df -h .</code> shows <code>ext4</code>, not <code>9p</code></li>
+      </ul>
+    </div>
+  </details>
+</section>
+
+<section id="editor">
+  <h2>Editor setup: pick one path</h2>
+  <p>Pick one as your daily driver and keep the other for the tasks it handles better. Keep VS Code installed for debugging sessions until <code>nvim-dap</code> is dialed in (~2 months) and for Prisma Studio glimpses; keep Neovim around for vim-motion editing speed. Below are two complete paths.</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="vscode">VS Code path</button>
+    <button class="tab-btn" data-tab="neovim">Neovim path</button>
+  </div>
+
+  <div class="tab-content active" id="editor-vscode">
+    <h3>VS Code 2026 stack</h3>
+    <p>Core extensions, the workspace TypeScript pin pattern, full <code>settings.json</code> and <code>launch.json</code>, and Claude Code CLI integration.</p>
+
+    <h4>Extensions (marketplace IDs)</h4>
+    <table>
+      <thead><tr><th>Extension</th><th>ID</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Biome</td><td><code>biomejs.biome</code></td><td>Official, type-aware linting in v2.3 (~85% typescript-eslint parity)</td></tr>
+        <tr><td>ESLint (scoped to apps/web)</td><td><code>dbaeumer.vscode-eslint</code></td><td>For <code>eslint-plugin-next</code>'s Next.js-specific rules</td></tr>
+        <tr><td>Prisma</td><td><code>Prisma.prisma</code></td><td>Official, schema autocomplete + format</td></tr>
+        <tr><td>Tailwind CSS IntelliSense</td><td><code>bradlc.vscode-tailwindcss</code></td><td>Tailwind Labs, reads <code>tailwind.config.ts</code></td></tr>
+        <tr><td>Error Lens</td><td><code>usernamehw.errorlens</code></td><td>Inline diagnostics that pair with Biome's fast feedback</td></tr>
+        <tr><td>PostgreSQL</td><td><code>ms-ossdata.vscode-pgsql</code></td><td>Microsoft's full in-editor Postgres IDE</td></tr>
+        <tr><td>REST Client</td><td><code>humao.rest-client</code></td><td><code>.http</code> files in repo. Avoid Thunder Client (paywalled).</td></tr>
+        <tr><td>GitLens</td><td><code>eamodio.gitlens</code></td><td>Inline blame, file history</td></tr>
+        <tr><td>Claude Code</td><td><code>anthropic.claude-code</code></td><td>Official extension; you already use the CLI. <code>Alt+K</code> inserts file references.</td></tr>
+        <tr><td>Catppuccin Mocha + icons</td><td><code>Catppuccin.catppuccin-vsc</code></td><td>Low eye-fatigue for long sessions</td></tr>
+      </tbody>
+    </table>
+
+    <div class="alert warn">
+      <strong>Uninstall in 2026:</strong> Thunder Client (paywalled), ESLint in Biome-only packages (double-diagnostics), Prettier alongside Biome, Vitest Explorer (<code>ZixuanChen.vitest-explorer</code> is deprecated; use <code>vitest.explorer</code>), Bracket Pair Colorizer 2 (native now), Path Intellisense (native now), Tabnine/Codeium (redundant with Claude Code).
+    </div>
+
+    <h4>Workspace <code>.vscode/settings.json</code></h4>
+<pre><code class="language-json">{
+  // Pin to workspace TypeScript so all packages agree on version.
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.inlayHints.parameterNames.enabled": "all",
+  "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
+
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "biomejs.biome",
+  "[typescript]":       { "editor.defaultFormatter": "biomejs.biome" },
+  "[typescriptreact]":  { "editor.defaultFormatter": "biomejs.biome" },
+  "[javascript]":       { "editor.defaultFormatter": "biomejs.biome" },
+  "[json]":             { "editor.defaultFormatter": "biomejs.biome" },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit",
+    "source.organizeImports.biome": "explicit",
+    "source.organizeImports": "never"
+  },
+
+  // Scope ESLint to the Next.js app only — Biome handles services/api.
+  "eslint.workingDirectories": [
+    { "directory": "apps/web", "changeProcessCWD": true }
+  ],
+
+  // Tailwind class detection inside cn() / clsx() / cva()
+  "tailwindCSS.experimental.classRegex": [
+    ["(?:cn|clsx)\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["cva\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+  ],
+
+  "npm.packageManager": "pnpm",
+  "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+  "errorLens.followCursor": "allLines",
+
+  // PowerShell as default when running VS Code on Windows host;
+  // for WSL2 dev, open VS Code via `code .` from WSL2 — it auto-uses WSL terminal.
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+
+  "workbench.colorTheme": "Catppuccin Mocha",
+  "workbench.iconTheme": "catppuccin-mocha"
+}</code></pre>
+
+    <h4>Workspace <code>.vscode/launch.json</code> for full-stack debugging</h4>
+<pre><code class="language-json">{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js: debug server-side",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm dev --inspect",
+      "cwd": "${workspaceFolder}/apps/web",
+      "skipFiles": ["&lt;node_internals&gt;/**", "**/node_modules/**"]
+    },
+    {
+      "name": "Next.js: debug client-side",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/apps/web",
+      "sourceMaps": true
+    },
+    {
+      "name": "Hono: debug server",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "tsx", "watch", "--inspect", "src/index.ts"],
+      "cwd": "${workspaceFolder}/services/api",
+      "skipFiles": ["&lt;node_internals&gt;/**", "**/node_modules/**"],
+      "restart": true
+    },
+    {
+      "name": "Vitest: debug current file",
+      "type": "node",
+      "request": "launch",
+      "autoAttachChildProcesses": true,
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": ["run", "${relativeFile}", "--no-file-parallelism", "--test-timeout=0"],
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full stack: Next.js + Hono",
+      "configurations": ["Next.js: debug server-side", "Hono: debug server"],
+      "stopAll": true
+    }
+  ]
+}</code></pre>
+
+    <h4>Claude Code CLI ↔ VS Code workflow</h4>
+    <ul>
+      <li><code>Alt+K</code> while text is selected inserts <code>@filename#startLine-endLine</code> into the Claude prompt. Fastest way to send a specific block.</li>
+      <li><code>Ctrl+Esc</code> toggles focus between editor and Claude panel.</li>
+      <li>Plan mode (<code>"claudeCode.initialPermissionMode": "plan"</code>) is recommended for multi-file refactors.</li>
+      <li>Run <code>claude</code> in VS Code's integrated terminal, and the built-in MCP server opens diffs in VS Code's native diff viewer.</li>
+    </ul>
+  </div>
+
+  <div class="tab-content" id="editor-neovim">
+    <h3>Neovim 2026: LazyVim + extras</h3>
+    <p>Use LazyVim v15+ on Neovim 0.11.2+ rather than kickstart.nvim (more manual configuration) or LunarVim (no longer actively maintained). LazyVim's <code>:LazyExtras</code> system is the equivalent of VS Code extensions that already work on install.</p>
+
+    <div class="alert danger">
+      <strong>Windows flag, read first:</strong> Do not install Neovim on Windows-native PowerShell for this stack. The LSP ecosystem (Mason installs, neotest-vitest, DAP adapters) assumes POSIX paths. Install Neovim in WSL2 only, with project files in WSL2's native FS, not <code>/mnt/c/</code>.
+    </div>
+
+    <p><strong>Time to comfortable daily use:</strong> 2–4 weeks of real use. Week 1 is keybinding rewiring, week 2 is LSP and formatter flow, week 3 is when you stop reaching for VS Code. Keep VS Code installed for debugging sessions and Prisma Studio.</p>
+
+    <h4>Install (inside WSL2)</h4>
+    <p>If you already ran <strong>Stage 3</strong> of the Prerequisites install script, Neovim + LazyVim are already installed, so skip this. Otherwise:</p>
+<pre><code class="language-bash"># Neovim 0.12+ stable (apt is always 2+ versions behind)
+# Note: the release tarball is now nvim-linux-x86_64.tar.gz, not the old neovim-linux64
+curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+tar -xzf nvim-linux-x86_64.tar.gz
+sudo install -m 755 nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+
+# LazyVim starter (backs up any existing config)
+git clone https://github.com/LazyVim/starter ~/.config/nvim
+rm -rf ~/.config/nvim/.git
+
+# win32yank — clipboard bridge from WSL2 Neovim to Windows host
+# Without this, `y` in Neovim never reaches the Windows clipboard
+curl -sLo /tmp/win32yank.zip https://github.com/equalsraf/win32yank/releases/latest/download/win32yank-x64.zip
+unzip -d /tmp/win32yank /tmp/win32yank.zip
+sudo install -m 755 /tmp/win32yank/win32yank.exe /usr/local/bin/
+
+nvim  # plugins install automatically on first open</code></pre>
+
+    <h4>Enable extras (one-time, via <code>:LazyExtras</code> menu)</h4>
+    <ul>
+      <li><code>lang.typescript</code>: vtsls (the VS Code TypeScript service wrapped as LSP, better than ts_ls)</li>
+      <li><code>lang.prisma</code>: prismals (autocomplete works; hover docs broken on Neovim ≥0.11, upstream issue #1823)</li>
+      <li><code>lang.tailwind</code>: tailwindcss-language-server</li>
+      <li><code>test.core</code>: neotest + neotest-vitest</li>
+      <li><code>dap.core</code>: nvim-dap + vscode-js-debug for Node debugging</li>
+    </ul>
+
+    <h4>Custom plugin spec: <code>~/.config/nvim/lua/plugins/dev-stack.lua</code></h4>
+<pre><code class="language-lua">return {
+  -- Use snacks.picker (Normal-mode navigation, frecency) over fzf-lua default
+  { "folke/snacks.nvim", opts = { picker = { enabled = true } } },
+
+  -- Treesitter parsers for this stack
+  {
+    "nvim-treesitter/nvim-treesitter",
+    opts = function(_, opts)
+      vim.list_extend(opts.ensure_installed or {}, {
+        "typescript", "tsx", "javascript", "json", "jsonc",
+        "html", "css", "prisma", "markdown", "markdown_inline",
+      })
+    end,
+  },
+
+  -- Claude Code CLI native integration (matches the VS Code extension protocol)
+  -- Run `claude` in terminal; editor selection + open file are auto-injected.
+  {
+    "coder/claudecode.nvim",
+    config = true,
+    keys = {
+      { "&lt;leader&gt;ac", "&lt;cmd&gt;ClaudeCode&lt;cr&gt;",      desc = "Toggle Claude Code" },
+      { "&lt;leader&gt;af", "&lt;cmd&gt;ClaudeCodeFocus&lt;cr&gt;", desc = "Focus Claude Code" },
+      { "&lt;leader&gt;as", "&lt;cmd&gt;ClaudeCodeSend&lt;cr&gt;",  desc = "Send selection", mode = "v" },
+    },
+    opts = { terminal_provider = "snacks" },
+  },
+
+  -- avante.nvim for Cursor-style inline diff workflow
+  {
+    "yetone/avante.nvim",
+    event = "VeryLazy",
+    build = "make",
+    opts = { provider = "claude" },
+    dependencies = {
+      "nvim-treesitter/nvim-treesitter",
+      "nvim-lua/plenary.nvim",
+      "MunifTanjim/nui.nvim",
+    },
+  },
+
+  -- oil.nvim for filesystem-as-buffer (rename files by editing the buffer)
+  {
+    "stevearc/oil.nvim",
+    opts = { default_file_explorer = false },
+    keys = { { "-", "&lt;cmd&gt;Oil&lt;cr&gt;", desc = "Open parent in oil" } },
+  },
+
+  -- Vitest test runner integration
+  {
+    "nvim-neotest/neotest",
+    optional = true,
+    dependencies = { "marilari88/neotest-vitest" },
+    opts = function(_, opts)
+      opts.adapters = opts.adapters or {}
+      table.insert(opts.adapters, require("neotest-vitest"))
+    end,
+  },
+}</code></pre>
+
+    <h4>The 5 keybindings a TS dev uses 50 times a day</h4>
+    <table>
+      <thead><tr><th>Action</th><th>LazyVim</th><th>VS Code equivalent</th></tr></thead>
+      <tbody>
+        <tr><td>Find file by name</td><td><code>&lt;leader&gt;&lt;space&gt;</code></td><td><code>Ctrl+P</code></td></tr>
+        <tr><td>Live grep</td><td><code>&lt;leader&gt;/</code></td><td><code>Ctrl+Shift+F</code></td></tr>
+        <tr><td>Go to definition</td><td><code>gd</code></td><td><code>F12</code></td></tr>
+        <tr><td>Rename symbol</td><td><code>&lt;leader&gt;cr</code></td><td><code>F2</code></td></tr>
+        <tr><td>Toggle terminal</td><td><code>&lt;C-\&gt;</code></td><td><code>Ctrl+`</code></td></tr>
+      </tbody>
+    </table>
+
+    <h4>Limitations vs VS Code (2026)</h4>
+    <ul>
+      <li><strong>Debugging.</strong> nvim-dap-ui is functional but sparse compared to VS Code's debug sidebar. Initial setup of <code>vscode-js-debug</code> is fiddly. Use VS Code for debugging sessions for the first 2 months.</li>
+      <li><strong>Prisma hover docs broken</strong> on Neovim ≥0.11 (autocomplete + go-to-def work). No Prisma Studio integration; use the browser.</li>
+      <li><strong>No inline lightbulb</strong> for code actions: you must invoke <code>&lt;leader&gt;ca</code> explicitly. Discoverability is worse.</li>
+    </ul>
+
+    <h4>WezTerm + WSL2 setup (Windows host)</h4>
+    <p>Install JetBrainsMono Nerd Font to the Windows font store (right-click the TTF, then Install for all users; this requires admin on Windows 11). Create the config dir from PowerShell first: <code>mkdir $env:USERPROFILE\.config\wezterm</code>. Then drop this <code>wezterm.lua</code> in it:</p>
+    <div class="alert warn">
+      <strong>Verify your distro name first:</strong> run <code>wsl --list</code> in PowerShell. If your distro is registered as <code>Ubuntu</code> rather than <code>Ubuntu-24.04</code>, change the <code>--distribution</code> arg below to match, or WezTerm will silently fall back to PowerShell on launch.
+    </div>
+<pre><code class="language-lua">-- %USERPROFILE%\.config\wezterm\wezterm.lua  (on Windows host)
+local wezterm = require("wezterm")
+return {
+  font = wezterm.font("JetBrainsMono Nerd Font"),
+  font_size = 13.0,
+  default_prog = { "wsl.exe", "--distribution", "Ubuntu-24.04" },
+  color_scheme = "Tokyo Night",
+  window_padding = { left = 4, right = 4, top = 4, bottom = 4 },
+}</code></pre>
+  </div>
+</section>
+
+<section class="phase" id="phase-0">
+  <h2>Phase 0 — Toolchain (~2 hours)</h2>
+  <p>Set up the toolchain once, before the exercises begin. Node 24 LTS is current as of Oct 2025; pnpm 11 via <code>corepack enable</code>. <a href="https://biomejs.dev/blog/biome-v2/" target="_blank" rel="noopener">Biome v2</a> (released June 17, 2025) is the lint+formatter for greenfield projects.</p>
+
+  <article class="concept" id="c-strict-tsconfig">
+    <div class="concept-head">
+      <h3>Strict tsconfig + triggered failures</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="strict-tsconfig" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>The TypeScript flags <code>noUncheckedIndexedAccess</code> and <code>exactOptionalPropertyTypes</code> tend to surprise a C# dev. Reference: <a href="https://www.totaltypescript.com/tsconfig-cheat-sheet" target="_blank" rel="noopener">Matt Pocock's TSConfig cheat sheet</a>.</p>
+    <details class="exercise" open>
+      <summary>Exercise: write the snippets that fail under strict flags</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Setup</h5>
+          <p>Create a <code>tsconfig.json</code> with <code>strict: true</code>, <code>noUncheckedIndexedAccess</code>, <code>exactOptionalPropertyTypes</code>, <code>verbatimModuleSyntax</code>, <code>isolatedModules</code>, <code>module: "NodeNext"</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the failures</h5>
+          <ol>
+            <li>Array index access without an undefined check (<code>const x: number = arr[0]</code>) should error under <code>noUncheckedIndexedAccess</code>.</li>
+            <li>Assigning <code>undefined</code> to a <code>field?:</code> property should error under <code>exactOptionalPropertyTypes</code>.</li>
+            <li>Regular <code>import</code> of a type-only symbol should error under <code>verbatimModuleSyntax</code>; fix with <code>import type</code>.</li>
+          </ol>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>Each of the three errors fires under the strict flags but disappears with plain <code>strict: true</code> alone.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+</section>
+
+<section class="phase" id="phase-1">
+  <h2>Phase 1 — Hono on Node (~3 days, ~9 hours)</h2>
+  <p>This is your daily-driver framework, so learn it before Next.js. Ten core concepts that map ASP.NET Core muscle memory onto Hono.</p>
+
+  <article class="concept" id="c1-fetch-bridge">
+    <div class="concept-head">
+      <h3>1. Web Fetch primitives + <code>@hono/node-server</code> bridge</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c1-fetch-bridge" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Hono builds on <code>Request</code> / <code>Response</code> / <code>Headers</code> / <code>URL</code>. <code>@hono/node-server</code> is the Kestrel-equivalent adapter from Node's <code>http</code> to Fetch primitives.</p>
+    <div class="resource">
+      <div class="resource-icon">🎥</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://www.youtube.com/watch?v=4ks1RvEM99Y" target="_blank" rel="noopener">Yusuke Wada — "The Creator of Hono on Bringing It to Node.js"</a></div>
+        <div class="resource-meta">15 min · GitNation Node Congress 2025 · The Hono creator's own walkthrough</div>
+      </div>
+    </div>
+    <div class="video-embed">
+      <iframe loading="lazy" src="https://www.youtube.com/embed/4ks1RvEM99Y" title="The Creator of Hono on Bringing It to Node.js" allowfullscreen></iframe>
+    </div>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://hono.dev/docs/concepts/web-standard" target="_blank" rel="noopener">Hono Web Standards concept doc</a></div>
+        <div class="resource-meta">Official · always current</div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: build the bridge manually, then replicate with @hono/node-server</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Create a raw <code>http.createServer</code> that constructs a <code>Request</code> object manually from <code>IncomingMessage</code>, returns <code>new Response(...)</code>. Then replicate the same route using <code>@hono/node-server</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p><code>curl</code> both endpoints; confirm headers and body match. The bridge is just a Fetch↔Node adapter.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c2-context">
+    <div class="concept-head">
+      <h3>2. Context (<code>c</code>) and typed <code>Variables</code></h3>
+      <div class="concept-meta">
+        <span class="tag">60 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c2-context" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Per-app typing with <code>new Hono&lt;{ Variables: {...} }&gt;()</code>. Avoid the global <code>ContextVariableMap</code> augmentation; it masks runtime <code>undefined</code> when middleware hasn't run.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://hono.dev/docs/api/context" target="_blank" rel="noopener">Hono Context API docs</a> + <a href="https://hono.dev/docs/guides/middleware" target="_blank" rel="noopener">Middleware guide</a></div>
+        <div class="resource-meta">Plus the typing gotcha at <a href="https://github.com/orgs/honojs/discussions/3257" target="_blank" rel="noopener">honojs/discussions/3257</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: typed authMiddleware with Vitest</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Write <code>authMiddleware</code> using <code>createMiddleware&lt;{ Variables: { userId: string } }&gt;()</code> that reads <code>Authorization: Bearer</code>. Mount on a sub-router.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>Vitest cases via <code>app.request()</code>: header present → 200, header missing → 401. Confirm TypeScript errors if a handler outside the middleware chain reads <code>c.var.userId</code>.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c3-onion">
+    <div class="concept-head">
+      <h3>3. Onion middleware (before/after <code>next()</code>)</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c3-onion" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Code before <code>await next()</code> runs inbound; code after runs outbound. It's a bidirectional wrap, not Express's flat chain.</p>
+    <details class="exercise">
+      <summary>Exercise: requestTimer with the double-next() failure</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Stamp <code>performance.now()</code> before <code>next()</code>, compute elapsed after, set <code>X-Response-Time</code> header on the response.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the failure</h5>
+          <p>Deliberately call <code>next()</code> <em>twice</em> in a buggy middleware. Observe the double-execution downstream. Fix.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>Vitest: <code>X-Response-Time</code> header present, parses as a number, fires exactly once per request.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c4-routing-rpc">
+    <div class="concept-head">
+      <h3>4. Routing + <code>AppType</code> + RPC client</h3>
+      <div class="concept-meta">
+        <span class="tag">60 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c4-routing-rpc" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Chain returns and <code>export type AppType = typeof app</code> so <code>hc&lt;AppType&gt;</code> gives you Refit-style end-to-end types. Don't write controller classes; type inference dies.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://hono.dev/docs/guides/best-practices" target="_blank" rel="noopener">Hono Best Practices</a> + <a href="https://hono.dev/docs/guides/rpc" target="_blank" rel="noopener">RPC guide</a> + <a href="https://blog.yusu.ke/hono-rpc/" target="_blank" rel="noopener">Yusuke's RPC blog (Aug 2024)</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: schema-changes-but-AppType-doesn't gotcha</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Books CRUD router. Chain <code>.route('/books', books)</code>, assign to a declared variable, export <code>AppType</code>. In a separate <code>client/</code>, instantiate <code>hc&lt;AppType&gt;('http://...')</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the failure</h5>
+          <p>Modify the server's Zod schema. <em>Don't</em> rebuild / re-export <code>AppType</code>. Watch the client silently send the wrong shape and the server reject it at runtime.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>Wire <code>AppType</code> regeneration into your build/CI so the client breaks at compile time, not runtime.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c5-zod-validator">
+    <div class="concept-head">
+      <h3>5. Validation with <code>@hono/zod-validator</code> + Zod 4</h3>
+      <div class="concept-meta">
+        <span class="tag">60 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c5-zod-validator" aria-label="Mark complete">
+      </div>
+    </div>
+    <p><code>@hono/zod-validator</code> 0.8.0 (Dec 2025) supports Zod 4. <code>c.req.valid('json')</code> returns the typed, parsed value.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://hono.dev/docs/guides/validation" target="_blank" rel="noopener">Hono Validation guide</a> + <a href="https://github.com/honojs/middleware/tree/main/packages/zod-validator" target="_blank" rel="noopener">@hono/zod-validator README</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: zValidator + three Vitest cases</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Add <code>zValidator('json', CreateBookSchema)</code> to <code>POST /books</code>. Three Vitest cases: valid (201), missing <code>title</code> (400), <code>year</code> as string (400).</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>400 responses come from the validator without custom error code. No try/catch in your handler.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept trophy" id="c6-onerror">
+    <div class="concept-head">
+      <h3>⭐ 6. <code>HTTPException</code> + <code>onError</code> header-loss gotcha</h3>
+      <div class="concept-meta">
+        <span class="tag">60 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c6-onerror" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Documented in only one place: the official Hono exception page. <code>HTTPException.getResponse()</code> does NOT include headers you set on <code>c</code>, so re-apply them in <code>onError</code>. The failure is easy to miss. The fix illustrates the immutable Response model underlying Fetch: construct a new Response with the context headers re-applied.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://hono.dev/docs/api/exception" target="_blank" rel="noopener">Hono HTTPException docs</a></div>
+        <div class="resource-meta">Quote from docs: "HTTPException.getResponse is not aware of Context."</div>
+      </div>
+    </div>
+    <details class="exercise" open>
+      <summary>Exercise: make CORS survive an HTTPException</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Mount a CORS middleware setting <code>Access-Control-Allow-Origin</code>. Throw <code>new HTTPException(403)</code> from a route. In <code>app.onError</code>, call <code>err.getResponse()</code> directly.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the failure</h5>
+          <p>Write a Vitest asserting the CORS header survives. It fails: the error response has no CORS header, so browsers will block it cross-origin.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Fix and verify</h5>
+          <p>Clone the response with context headers re-applied in <code>onError</code>. Test now passes.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c7-di-closures">
+    <div class="concept-head">
+      <h3>7. DI by closures: the testing seam</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c7-di-closures" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>No <code>IServiceCollection</code>. Module-level singletons for app-scoped state (<code>export const prisma = ...</code>); <code>c.set('user', ...)</code> in middleware for request-scoped. The testing seam is the function argument: pass dependencies in so tests can substitute them.</p>
+    <details class="exercise">
+      <summary>Exercise: makeBooksRouter(db) factory with mock injection</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Factory <code>makeBooksRouter(db: PrismaClient)</code>. Production: instantiate one singleton, pass it in. Test: pass a hand-built mock <code>{ book: { findMany: vi.fn() } }</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>The mock intercepts at the middleware layer. No real DB needed for tests.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c8-pino">
+    <div class="concept-head">
+      <h3>8. Logging: pino + child logger middleware (from scratch)</h3>
+      <div class="concept-meta">
+        <span class="tag">75 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c8-pino" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>The <code>hono-pino</code> package is in security-only maintenance, so build this from scratch.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://getpino.io" target="_blank" rel="noopener">pino docs</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: full loggerMiddleware with requestId binding</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Before <code>next()</code>: generate <code>requestId</code> (<code>crypto.randomUUID()</code>), create child logger, set on context. After <code>next()</code>: log <code>{ method, url, status, durationMs }</code>. In <code>onError</code>: log at error level.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>Vitest spy on pino transport: assert <code>requestId</code> appears in every log line for one request.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c9-shutdown">
+    <div class="concept-head">
+      <h3>9. Graceful shutdown: make the race visible</h3>
+      <div class="concept-meta">
+        <span class="tag">30 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c9-shutdown" aria-label="Mark complete">
+      </div>
+    </div>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://hono.dev/docs/getting-started/nodejs" target="_blank" rel="noopener">Hono Node.js getting-started</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: SIGTERM mid-flight</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Slow endpoint with <code>await new Promise(r =&gt; setTimeout(r, 5000))</code>. <code>serve()</code> returns a server handle; capture it. On SIGINT/SIGTERM, call <code>server.close()</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the race</h5>
+          <p>From shell 1: <code>curl</code> the slow endpoint. From shell 2: <code>kill -SIGTERM &lt;pid&gt;</code> mid-flight.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>The in-flight request completes (status 200, body returned) <em>before</em> the process exits. There's no <code>IHostedService</code> equivalent; you call <code>close()</code> manually.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c10-testing">
+    <div class="concept-head">
+      <h3>10. Testing via <code>app.request()</code>: no port, no supertest</h3>
+      <div class="concept-meta">
+        <span class="tag">60 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c10-testing" aria-label="Mark complete">
+      </div>
+    </div>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://hono.dev/docs/guides/testing" target="_blank" rel="noopener">Hono Testing guide</a> + <a href="https://hono.dev/docs/helpers/testing" target="_blank" rel="noopener">Testing Helper</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: full Vitest suite via app.request() + testClient</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Full Vitest suite for books CRUD via <code>await app.request('/path', init)</code>. Rewrite three tests using <code>testClient</code> from <code>hono/testing</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>Zero ports opened during <code>vitest run</code>; check with <code>lsof</code> or disable network in the test environment. No supertest, no fixture server.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c-d1-openapi">
+    <div class="concept-head">
+      <h3>Deep dive: <code>@hono/zod-openapi</code> + RPC type-inference collision</h3>
+      <div class="concept-meta">
+        <span class="tag">90 min</span>
+        <span class="tag warn">DEPTH</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c-d1-openapi" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Once the API works, a team usually adds a Scalar/Swagger UI for backend consumers. The collision: <code>OpenAPIHono</code> extends <code>Hono</code>, but methods like <code>.get()</code> return <code>Hono</code> (not <code>OpenAPIHono</code>), breaking <code>AppType</code> inference unless you chain <code>.route()</code> from a single entrypoint. A second gotcha: <code>hono</code> resolved from <code>@hono/zod-openapi</code>'s transitive deps must be the identical physical file as your project's <code>hono</code>; a version mismatch silently breaks RPC types.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://www.speakeasy.com/openapi/frameworks/hono" target="_blank" rel="noopener">Speakeasy — Generate OpenAPI with Hono</a></div>
+        <div class="resource-meta">2025, updated for Hono v4. Pair with <a href="https://github.com/orgs/honojs/discussions/3444" target="_blank" rel="noopener">discussion #3444</a> on module-resolution.</div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Deep-dive exercise: swap to OpenAPIHono without breaking the RPC client</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build (1)</h5>
+          <p>Swap the app to <code>OpenAPIHono</code>. Register every existing route via <code>app.openapi(createRoute({...}), handler)</code>. Confirm <code>typeof app</code> still satisfies <code>AppType</code> and <code>hc</code> client still compiles.</p>
+        </div>
+        <div class="exercise-step">
+          <h5>Build (2)</h5>
+          <p>Add <code>app.doc31('/openapi.json', {...})</code>. Serve Scalar at <code>/docs</code> via <code>@scalar/hono-api-reference</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the dep-mismatch failure</h5>
+          <p>Install <code>@hono/zod-openapi</code> with a slightly different <code>hono</code> peer in a sibling workspace package. Watch RPC types break. Fix via workspace resolution pinning.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p><code>openapi.json</code> validates against the OpenAPI 3.1 schema; <code>hc</code> client compiles with full type inference; Scalar UI shows all routes with request/response schemas.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+</section>
+
+<section class="phase" id="phase-2">
+  <h2>Phase 2 — Prisma (~2 days, ~7 hours)</h2>
+  <p>Five Prisma docs pages cover 80% of this phase. Each exercise forces a failure EF Core hides from you: drift, raw-SQL diagnosis, the N+1 you can't <code>.Include()</code> away.</p>
+
+  <article class="concept" id="c11-schema">
+    <div class="concept-head">
+      <h3>11. <code>schema.prisma</code> vs EF Core fluent API</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c11-schema" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Everything in one declarative file. No <code>OnModelCreating</code>. Use unversioned <code>/docs/orm/</code> paths; v6-pinned URLs document the previous major.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/models" target="_blank" rel="noopener">Models</a> + <a href="https://www.prisma.io/docs/orm/prisma-schema/data-model/relations" target="_blank" rel="noopener">Relations</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: blog schema with explicit join + drift verification</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Models: <code>User</code>, <code>Post</code>, <code>Tag</code>, <code>PostTag</code> (explicit join with <code>@@id([postId, tagId])</code>). Add <code>Role</code> enum, <code>@@unique([email])</code>, <code>@@index([createdAt])</code>. Run <code>prisma migrate dev --name init</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify in psql</h5>
+          <p>Join table SQL has composite PK; enum became <code>CHECK</code> constraint; index appears in <code>\d Post</code>. The schema file replaces <code>OnModelCreating</code>, with no C# configuration.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept trophy" id="c12-drift">
+    <div class="concept-head">
+      <h3>⭐ 12. Migrate dev vs deploy + drift detection</h3>
+      <div class="concept-meta">
+        <span class="tag">60 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c12-drift" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Prisma rejects a migration when the database has drifted from migration history, unlike <code>dotnet ef database update</code>. You diagnose it by reading the SQL Prisma generated.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://www.prisma.io/docs/orm/prisma-migrate/understanding-prisma-migrate/mental-model" target="_blank" rel="noopener">Migrate mental model</a> + <a href="https://www.prisma.io/docs/orm/prisma-migrate/understanding-prisma-migrate/shadow-database" target="_blank" rel="noopener">Shadow database</a></div>
+      </div>
+    </div>
+    <details class="exercise" open>
+      <summary>Exercise: cause drift in psql, watch Prisma reject the migration</summary>
+      <div class="exercise-body">
+        <div class="exercise-step failure">
+          <h5>Trigger drift</h5>
+          <p>With the schema from #11 applied: <code>ALTER TABLE "Post" ADD COLUMN body_backup TEXT</code> directly in psql. Re-run <code>prisma migrate dev</code>. <strong>Observe the drift error verbatim.</strong></p>
+        </div>
+        <div class="exercise-step">
+          <h5>Recover</h5>
+          <p>Drop the manual column. Migration succeeds again.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify the RENAME generation</h5>
+          <p>Rename <code>Post.title</code> → <code>Post.headline</code> in <code>schema.prisma</code>. Re-run, then read the generated <code>migration.sql</code> carefully and confirm it's <code>ALTER COLUMN ... RENAME</code>, not drop+add.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c13-n-plus-1">
+    <div class="concept-head">
+      <h3>13. <code>findUnique</code> vs <code>findFirst</code>, <code>include</code>, N+1</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c13-n-plus-1" aria-label="Mark complete">
+      </div>
+    </div>
+    <p><code>findUnique</code> is batchable (DataLoader); <code>findFirst</code> is not. Use <code>findUnique</code> on hot paths keyed by PK or unique field. Avoid fluent <code>.posts()</code> chains in loops.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries" target="_blank" rel="noopener">Relation queries</a> + <a href="https://www.prisma.io/docs/orm/prisma-client/queries/query-optimization-performance" target="_blank" rel="noopener">Query optimization</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: count SQL queries via the log</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Seed 10 users × 5 posts. Two implementations: (a) loop + fluent <code>.posts()</code>, (b) <code>findMany({ include: { posts: { select: { title: true } } } })</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>Enable <code>log: ['query']</code>. Count SQL emissions: version A = 11 queries (1 + 10), version B = 1 or 2.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c14-load-strategy">
+    <div class="concept-head">
+      <h3>14. <code>relationLoadStrategy</code>: <code>join</code> vs <code>query</code></h3>
+      <div class="concept-meta">
+        <span class="tag">75 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c14-load-strategy" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Still preview-flagged in May 2026 (<code>previewFeatures = ["relationJoins"]</code>). <strong>Prereq:</strong> familiarity with reading <code>EXPLAIN ANALYZE</code>. Without it, this exercise is closer to 90 minutes.</p>
+    <details class="exercise">
+      <summary>Exercise: observe LATERAL JOIN in the plan</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Enable the preview flag in <code>schema.prisma</code>, regenerate the client. Query with <code>relationLoadStrategy: "join"</code>, capture the SQL.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>Run the SQL under <code>EXPLAIN ANALYZE</code> in psql. Confirm <code>LATERAL</code> appears in the plan. Switch to <code>"query"</code>, confirm two separate SELECTs in the query log.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept trophy" id="c15-transactions">
+    <div class="concept-head">
+      <h3>⭐ 15. Interactive transactions: trigger the rollback</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c15-transactions" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>The key footgun: use <code>tx.user.update</code>, not <code>prisma.user.update</code>, inside the callback. Anything that escapes the transaction client stays uncommitted.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://www.prisma.io/docs/orm/prisma-client/queries/transactions" target="_blank" rel="noopener">Transactions docs</a></div>
+      </div>
+    </div>
+    <details class="exercise" open>
+      <summary>Exercise: transfer funds with deliberate throw</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Transfer funds: debit one account, credit another, throw if balance would go negative. Use <code>$transaction(async (tx) =&gt; {...})</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the rollback</h5>
+          <p>Throw deliberately mid-transfer. Query balances afterward and confirm both rows are unchanged.</p>
+        </div>
+        <div class="exercise-step">
+          <h5>Observe array-form limitation</h5>
+          <p>Try the array form <code>$transaction([q1, q2])</code> and observe you cannot read the intermediate balance to guard against overdraft. The array form is atomic sequencing only.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c16-singleton">
+    <div class="concept-head">
+      <h3>16. Next.js dev singleton: watch the pool exhaust</h3>
+      <div class="concept-meta">
+        <span class="tag">20 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c16-singleton" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Without this pattern, hot reload exhausts your DB pool within minutes.</p>
+<pre><code class="language-typescript">const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;</code></pre>
+    <details class="exercise">
+      <summary>Exercise: remove the singleton, watch the pool climb</summary>
+      <div class="exercise-body">
+        <div class="exercise-step failure">
+          <h5>Trigger the failure</h5>
+          <p>Remove <code>globalForPrisma</code>. Start <code>next dev</code>. Edit any file 10 times to trigger HMR.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify in psql</h5>
+          <p>Run <code>SELECT count(*) FROM pg_stat_activity WHERE application_name LIKE '%prisma%'</code> and the count climbs with each save. Re-add the singleton, restart, repeat: it stays at 1.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c17-pool">
+    <div class="concept-head">
+      <h3>17. Connection pooling: verify pool reuse under load</h3>
+      <div class="concept-meta">
+        <span class="tag">30 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c17-pool" aria-label="Mark complete">
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: autocannon 100 concurrent, confirm pool reuse</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>In your Hono server, log on PrismaClient instantiation. Fire 100 concurrent requests: <code>autocannon -c 100 http://localhost:3001/notes</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>"client instantiated" appears once. Query log fires 100 times. Then move <code>new PrismaClient()</code> inside the handler: instantiation fires 100 times, and Postgres rejects new connections.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c18-pgbouncer">
+    <div class="concept-head">
+      <h3>18. PgBouncer prepared-statement footgun</h3>
+      <div class="concept-meta">
+        <span class="tag">90 min</span>
+        <span class="tag warn">SETUP-HEAVY</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c18-pgbouncer" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>PgBouncer ≥1.21 now supports prepared statements natively, so the <code>?pgbouncer=true</code> flag is soft-deprecated for new setups. But your prereqs docker-compose forces the legacy mode (<code>max_prepared_statements = 0</code>) so you can trigger the error visibly.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/databases-connections/pgbouncer" target="_blank" rel="noopener">PgBouncer with Prisma</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: make the "prepared statement does not exist" error fire</summary>
+      <div class="exercise-body">
+        <div class="exercise-step prereq">
+          <h5>Prereqs</h5>
+          <p>The dev docker-compose from Prerequisites is already running with <code>PGBOUNCER_POOL_MODE: transaction</code>.</p>
+        </div>
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Set <code>DATABASE_URL=postgresql://dev:devpassword@localhost:6432/appdb</code> (PgBouncer port, no <code>?pgbouncer=true</code>). Run a Prisma interactive transaction with two statements.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the failure</h5>
+          <p>Observe <code>prepared statement does not exist</code>. The pooler reassigns the connection between statements.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Fix and verify</h5>
+          <p>Add <code>?pgbouncer=true</code>. The error disappears because Prisma disables prepared statements. Add <code>DIRECT_URL</code> pointing at the direct port (5433) for migrations.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c19-raw-sql">
+    <div class="concept-head">
+      <h3>19. Raw SQL: <code>$queryRaw</code> and TypedSQL</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c19-raw-sql" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>EF Core analog: <code>FromSqlInterpolated</code> → <code>prisma.$queryRaw`...`</code>. TypedSQL (still preview May 2026) generates typed functions from <code>.sql</code> files, which suits stable analytics queries.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://www.prisma.io/docs/orm/prisma-client/using-raw-sql/raw-queries" target="_blank" rel="noopener">Raw queries</a> + <a href="https://www.prisma.io/docs/orm/prisma-client/using-raw-sql/typedsql" target="_blank" rel="noopener">TypedSQL</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: same window function, two implementations</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Write <code>ROW_NUMBER() OVER (PARTITION BY authorId ORDER BY createdAt DESC)</code>. Once with <code>$queryRaw</code> + manual type. Once with TypedSQL <code>.sql</code> file + <code>prisma generate --sql</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>TypedSQL gives full autocomplete on result rows. <code>$queryRaw</code> requires you to maintain the type manually. Emitted SQL is identical under <code>EXPLAIN</code>.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c20-ef-shift">
+    <div class="concept-head">
+      <h3>20. EF Core mental shift: observe the extra round trip</h3>
+      <div class="concept-meta">
+        <span class="tag">60 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c20-ef-shift" aria-label="Mark complete">
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: translate update-user-profile, count the queries</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Write it EF-style first</h5>
+          <p>In Prisma, mimic EF: <code>findUnique</code> → mutate object fields locally → <code>update({ where, data: object })</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Observe the inefficiency</h5>
+          <p>Enable query log. Count: <strong>2 queries</strong> (read + write).</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Collapse and verify</h5>
+          <p>Rewrite to <code>prisma.user.update({ where: { id }, data: { name, updatedAt: new Date() } })</code> directly. One query. There's no <code>SaveChanges()</code>, no <code>DbContext</code>, and no change tracking; you pass the data payload explicitly.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c-d2-soft-delete">
+    <div class="concept-head">
+      <h3>Deep dive: Soft deletes + the unique-constraint trap</h3>
+      <div class="concept-meta">
+        <span class="tag">90 min</span>
+        <span class="tag warn">DEPTH</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c-d2-soft-delete" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Prisma has no built-in soft-delete. The old <code>$use</code> middleware API is deprecated; the replacement is <code>prisma-extension-soft-delete</code>. The gap to watch: <code>deletedAt</code> breaks unique constraints on <code>email</code>, so a user who soft-deletes blocks re-registration. The fix requires Postgres partial indexes.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://zenstack.dev/blog/soft-delete" target="_blank" rel="noopener">Soft Delete: Implementation Issues in Prisma — ZenStack</a> + <a href="https://www.thisdot.co/blog/how-to-implement-soft-delete-with-prisma-using-partial-indexes" target="_blank" rel="noopener">Partial indexes (This Dot Labs)</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Deep-dive exercise: soft delete + re-registration</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Add <code>deletedAt DateTime?</code> to <code>User</code>. Install <code>prisma-extension-soft-delete</code>, intercept <code>delete</code>/<code>deleteMany</code>, filter <code>findMany</code>/<code>findFirst</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the constraint failure</h5>
+          <p>Soft-delete a user. Attempt to re-create with the same email. <strong>Observe the unique constraint violation.</strong></p>
+        </div>
+        <div class="exercise-step">
+          <h5>Fix with a partial index</h5>
+          <p>Write a custom migration: <code>CREATE UNIQUE INDEX user_email_unique_active ON "User"(email) WHERE "deletedAt" IS NULL;</code></p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify nested filtering</h5>
+          <p>Run <code>findMany</code> on <code>Post</code> with <code>include: { author: true }</code>. Confirm soft-deleted authors are excluded from the nested relation, not just from top-level queries. Write a <code>recoverUser(id)</code> that sets <code>deletedAt = null</code> and confirm re-use of email works.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+</section>
+
+<section class="phase" id="phase-3">
+  <h2>Phase 3 — Next.js 16 App Router + RSC (~4 days, ~10 hours)</h2>
+  <p>Next.js 16 shipped October 21, 2025; 16.2 on March 18, 2026. Anything pre-Sept 2024 teaches stale defaults, and anything pre-Oct 2025 misses <code>proxy.ts</code> and Cache Components.</p>
+
+  <div class="alert info">
+    <strong>Watch first:</strong> The Next.js Conf 2025 AMA (Oct 22 2025) is the canonical "what shipped in 16 and why" from Lee Robinson, Delba de Oliveira, Jimmy Lai, Sebastian Markbåge, Josh Story.
+  </div>
+  <div class="video-embed">
+    <iframe loading="lazy" src="https://www.youtube.com/embed/UrilL6JII-U" title="Next.js Conf 2025 AMA" allowfullscreen></iframe>
+  </div>
+
+  <article class="concept trophy" id="c21-rsc-serialization">
+    <div class="concept-head">
+      <h3>⭐ 21. RSC vs Client + serializability: break it with Prisma <code>Decimal</code></h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c21-rsc-serialization" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>This is a common bug in early real work. Supported types: primitives, plain objects, arrays, Dates, Maps, Sets, TypedArrays. Not supported: class instances, functions, Symbols, WeakMaps, WeakSets, URL instances, BigInt, Decimal.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://nextjs.org/docs/app/getting-started/server-and-client-components" target="_blank" rel="noopener">Server and Client Components docs (v16.2.6)</a> + <a href="https://nextjs.org/docs/app/api-reference/directives/use-cache" target="_blank" rel="noopener"><code>use cache</code> serialization list</a></div>
+      </div>
+    </div>
+    <details class="exercise" open>
+      <summary>Exercise: Decimal across the RSC boundary</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Server Component <code>&lt;ProductCard&gt;</code> fetches a product via Prisma (price = <code>Decimal</code>). Pass the raw Prisma object directly to <code>'use client'</code> <code>&lt;AddToCart&gt;</code> as a prop.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the failure</h5>
+          <p>Observe the build/runtime error: Decimal can't cross the RSC boundary.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Fix and verify</h5>
+          <p>Convert <code>Decimal</code> → <code>number</code> at the boundary (or use superjson). Add a <code>Date</code> field and confirm it survives JSON.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c22-server-children">
+    <div class="concept-head">
+      <h3>22. Server children through Client Component pattern</h3>
+      <div class="concept-meta">
+        <span class="tag">30 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c22-server-children" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>A Client Component can take Server children via <code>children</code> and keep server work on the server. Worth committing to memory.</p>
+    <details class="exercise">
+      <summary>Exercise: SidebarShell + UserActivity RSC</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p><code>&lt;SidebarShell&gt;</code> Client Component with <code>useState</code> for collapse/expand. Pass <code>&lt;UserActivity&gt;</code> RSC (which <code>await</code>s a Prisma call) as <code>children</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>Open Network tab, find <code>?_rsc=</code> request. Confirm <code>&lt;UserActivity&gt;</code> output is in the RSC payload, not in the client bundle.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c23-data-read">
+    <div class="concept-head">
+      <h3>23. Data-read decision tree (RSC await vs TanStack Query vs <code>'use cache'</code>)</h3>
+      <div class="concept-meta">
+        <span class="tag">90 min</span>
+        <span class="tag warn">SETUP-HEAVY</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c23-data-read" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Prereq: Phase 1 Hono server on :3001 with seeded products.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://nextjs.org/docs/app/getting-started/caching" target="_blank" rel="noopener">Caching docs</a> + <a href="https://vercel.com/academy/nextjs-foundations/cache-components" target="_blank" rel="noopener">Vercel Academy — Cache Components</a></div>
+        <div class="resource-meta">Vercel Academy's Cache Components lesson is the only confirmed Next-16-current resource here; overlay it on anything older.</div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: three data shapes on one page</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build /products</h5>
+          <ol>
+            <li><code>&lt;Header&gt;</code> RSC <code>await</code>ing one-off config (no cache)</li>
+            <li><code>&lt;ProductGrid&gt;</code> with <code>'use cache'</code> + <code>cacheLife('hours')</code> + <code>cacheTag('products')</code></li>
+            <li><code>&lt;StockBadge&gt;</code> Client Component using TanStack Query polling every 30s</li>
+          </ol>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>Run <code>next build</code>, inspect output: ProductGrid in the static shell, StockBadge not.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c24-data-write">
+    <div class="concept-head">
+      <h3>24. Data-write decision tree: force a stale-data failure</h3>
+      <div class="concept-meta">
+        <span class="tag">90 min</span>
+        <span class="tag warn">SETUP-HEAVY</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c24-data-write" aria-label="Mark complete">
+      </div>
+    </div>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://nextjs.org/blog/building-apis-with-nextjs" target="_blank" rel="noopener">Building APIs with Next.js (Feb 2025)</a> + <a href="https://nextjs.org/docs/app/guides/data-security" target="_blank" rel="noopener">Data Security</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: publish-post flow with deliberate stale UI</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p><code>&lt;PostForm&gt;</code> Client → Server Action calling Hono → <code>updateTag('posts')</code>. Route Handler at <code>/api/webhooks/cms</code> calls <code>revalidateTag('posts', 'max')</code> (two-arg form).</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the failure</h5>
+          <p>In the Server Action, deliberately omit <code>updateTag()</code>. Submit form, observe stale list.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Fix and verify</h5>
+          <p>Add <code>updateTag()</code>. Observe read-your-writes semantics. Mutation without cache invalidation produces stale UI.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept trophy" id="c25-route-protection">
+    <div class="concept-head">
+      <h3>⭐ 25. Route protection layers + curl bypass</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c25-route-protection" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>The curl bypass shows that the proxy is not a security boundary: middleware controls routing, not authorization.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://nextjs.org/blog/next-16" target="_blank" rel="noopener">Next.js 16 blog</a> + <a href="https://nextjs.org/docs/app/guides/upgrading/version-16" target="_blank" rel="noopener">Upgrading to v16</a> + <a href="https://nextjs.org/docs/app/guides/data-security" target="_blank" rel="noopener">Data Security</a></div>
+      </div>
+    </div>
+    <details class="exercise" open>
+      <summary>Exercise: three layers, then bypass two of them with curl</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build three layers protecting /dashboard</h5>
+          <ol>
+            <li><code>proxy.ts</code> redirects unauthenticated → <code>/login</code></li>
+            <li><code>layout.tsx</code> calls <code>await auth()</code> + <code>redirect()</code></li>
+            <li><code>deleteRecordAction</code> Server Action calls <code>await auth()</code> and throws if null</li>
+          </ol>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Bypass the proxy</h5>
+          <p>Craft a <code>curl -X POST</code> directly against the Server Action's POST endpoint (extract the action ID, <a href="#c28-server-action-security">see #28</a>). The request bypasses the proxy entirely because it doesn't follow the route matcher. The in-action <code>auth()</code> check is what saves you.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Internalize</h5>
+          <p>Middleware controls routing, not security. Re-check <code>auth()</code> in every Server Action and data accessor.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c26-landmines">
+    <div class="concept-head">
+      <h3>26. Next.js 16 landmines: codemod + cacheComponents</h3>
+      <div class="concept-meta">
+        <span class="tag">30 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c26-landmines" aria-label="Mark complete">
+      </div>
+    </div>
+    <ul>
+      <li><code>middleware.ts</code> → <code>proxy.ts</code> rename (Node.js runtime only; Edge stays in middleware.ts)</li>
+      <li>Async dynamic APIs: <code>await params</code>, <code>await searchParams</code>, <code>await cookies()</code>, <code>await headers()</code></li>
+      <li><code>cacheComponents: true</code> replaces <code>experimental.dynamicIO</code> + <code>experimental.useCache</code></li>
+      <li><code>revalidateTag(tag, profile)</code> deprecates single-arg (TS warning, not hard error)</li>
+      <li><code>updateTag(tag)</code> new, Server Actions only, read-your-writes</li>
+      <li><code>experimental.ppr</code> flag removed</li>
+      <li><code>skipMiddlewareUrlNormalize</code> → <code>skipProxyUrlNormalize</code></li>
+    </ul>
+    <details class="exercise">
+      <summary>Exercise: run the codemod, observe the forced Suspense</summary>
+      <div class="exercise-body">
+        <div class="exercise-step prereq">
+          <h5>Prereq</h5>
+          <p>A minimal Next 15 starter. Don't build cold; use a Gist or starter repo.</p>
+        </div>
+        <div class="exercise-step">
+          <h5>Run the codemod</h5>
+          <p><code>npx @next/codemod@canary upgrade latest</code>. Review every file the codemod touches.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the forced Suspense</h5>
+          <p>Add <code>cacheComponents: true</code>. A component calling <code>cookies()</code> without a <code>&lt;Suspense&gt;</code> wrapper now errors with <code>Uncached data accessed outside &lt;Suspense&gt;</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Fix and verify</h5>
+          <p>Wrap with <code>&lt;Suspense&gt;</code>. <code>next build</code> succeeds.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c27-fetch-shifts">
+    <div class="concept-head">
+      <h3>27. Next.js 15 shifts: make staleness visible</h3>
+      <div class="concept-meta">
+        <span class="tag">30 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c27-fetch-shifts" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Since Next 15: <code>fetch</code> is no longer auto-cached. GET Route Handlers dynamic by default.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://nextjs.org/blog/our-journey-with-caching" target="_blank" rel="noopener">Our Journey with Caching (Oct 2024)</a></div>
+        <div class="resource-meta">The post-mortem on why Next moved away from implicit caching</div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: observe stale data, then force-cache, then use cache</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>RSC: <code>const data = await fetch('http://localhost:3001/products')</code>. Seed a product at $10. Render the price.</p>
+        </div>
+        <div class="exercise-step">
+          <h5>Update directly</h5>
+          <p>Change the price to $20 directly in Postgres. Reload the page.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Observe + iterate</h5>
+          <p>The price shows $20, because fetch is dynamic by default in Next 15+. Now add <code>{ cache: 'force-cache' }</code> and reload: it's stale. Add <code>revalidateTag</code> and tag the fetch, then move into <code>'use cache'</code>. Compare build output.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept trophy" id="c28-server-action-security">
+    <div class="concept-head">
+      <h3>⭐ 28. Server Actions security: grep your own build</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c28-server-action-security" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Server Actions compile to public POST endpoints, so <code>auth()</code> in every action is mandatory.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://nextjs.org/docs/app/guides/data-security" target="_blank" rel="noopener">Data Security docs</a> + <a href="https://nextjs.org/blog/security-nextjs-server-components-actions" target="_blank" rel="noopener">Sebastian Markbåge (Oct 2023, still authoritative)</a> + <a href="https://blog.arcjet.com/next-js-server-action-security/" target="_blank" rel="noopener">Arcjet plain-language take (Nov 2024)</a></div>
+      </div>
+    </div>
+    <details class="exercise" open>
+      <summary>Exercise: find the action ID in .next/static, curl it directly</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Export a Server Action. Run <code>next build</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Find the public endpoint</h5>
+          <p>Grep <code>.next/static</code> for <code>__ACTION_</code>. Construct <code>curl -X POST</code> against your app's POST endpoint with the action ID in the header and fabricated <code>FormData</code>. It succeeds if the action doesn't call <code>auth()</code>.</p>
+        </div>
+        <div class="exercise-step">
+          <h5>Add auth() + Origin check</h5>
+          <p>Add <code>await auth()</code> + authorization check inside the action. Re-curl, observe 401.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify Origin enforcement</h5>
+          <p>Add <code>serverActions.allowedOrigins</code> to <code>next.config.ts</code>. Try curl from a "wrong" Origin header, observe 403. Action IDs are encrypted but stable across requests within a build, so anyone can find them in your client bundle.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c29-rsc-traps">
+    <div class="concept-head">
+      <h3>29. Senior-React traps under RSC (two focused exercises)</h3>
+      <div class="concept-meta">
+        <span class="tag">60 min total</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c29-rsc-traps" aria-label="Mark complete">
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>29a: Server-only context + async cookies (30 min)</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Wrap root layout in <code>&lt;ThemeContext.Provider value={theme}&gt;</code> where <code>theme = await cookies().then(c =&gt; c.get('theme'))</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger</h5>
+          <p>Error: <code>cookies()</code> is a runtime API and must be in <code>&lt;Suspense&gt;</code> or <code>'use cache': private</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Fix</h5>
+          <p>Hoist the cookies read out of the cached scope. Pass <code>theme</code> as a prop to a small Client Component that supplies the Provider deeper in the tree. Observe the static shell of <code>/</code> recover its prerender.</p>
+        </div>
+      </div>
+    </details>
+    <details class="exercise">
+      <summary>29b: Env var leakage diagnosis (30 min)</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>In a <code>'use client'</code> component: <code>console.log(process.env.DB_SECRET)</code>. Build, open the browser, and observe <code>""</code> (Next silently replaces non-<code>NEXT_PUBLIC_</code> vars).</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Prove with bundle-analyzer</h5>
+          <p>Add <code>next/bundle-analyzer</code>. Confirm the secret is NOT in the client bundle; Next did the right thing.</p>
+        </div>
+        <div class="exercise-step">
+          <h5>Add the guard</h5>
+          <p>Add <code>import 'server-only'</code> to your DB module. Try to import it from a Client Component and observe the build-time error. The takeaway here is the diagnosis: using the bundle analyzer to prove the secret isn't shipped, rather than the fix itself.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c30-cache-debug">
+    <div class="concept-head">
+      <h3>30. Cache Components debug: <code>Uncached data accessed outside &lt;Suspense&gt;</code></h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c30-cache-debug" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Set <code>NEXT_PRIVATE_DEBUG_CACHE=1</code> for verbose cache logging. Jack Herrington's video covers the static-shell + Suspense-hole model. Check the upload date and rely on it only if it postdates Oct 2025:</p>
+    <div class="video-embed">
+      <iframe loading="lazy" src="https://www.youtube.com/embed/t9xB8xvySyo" title="Partial Page Caching with RSC" allowfullscreen></iframe>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: trigger the error, fix with Suspense vs use cache: private</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Enable <code>cacheComponents: true</code>. Add <code>await cookies()</code> directly in a component with no Suspense wrapper.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Observe the dev error verbatim</h5>
+          <p><code>Uncached data was accessed outside of &lt;Suspense&gt;</code>. Now run <code>next build</code> and observe the build-time variant.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Two fix paths, compare</h5>
+          <p>Fix once with <code>&lt;Suspense fallback={...}&gt;</code>. Compare to fixing with <code>'use cache': private</code>. Run <code>next build</code> and confirm the static shell output differs.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c-d3-parallel-routes">
+    <div class="concept-head">
+      <h3>Deep dive: Parallel routes + intercepting routes (the URL-driven modal pattern)</h3>
+      <div class="concept-meta">
+        <span class="tag">90 min</span>
+        <span class="tag warn">DEPTH</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c-d3-parallel-routes" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>You'll likely reach for a modal pattern early on. It has six distinct failure modes: missing <code>default.tsx</code> (slots vanish on direct nav), the <code>(..)</code> segment counter ignoring <code>@folder</code> + <code>(group)</code>, soft-nav preserving stale slot state, Server Actions blocking slot nav, and a Next 16-specific bug where <code>dynamicParams = false</code> breaks parallel routes with dynamic top-level segments.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://nextjs.org/docs/app/api-reference/file-conventions/parallel-routes" target="_blank" rel="noopener">Parallel Routes — official docs</a> + <a href="https://oneuptime.com/blog/post/2026-01-24-nextjs-parallel-routes-issues/view" target="_blank" rel="noopener">Fixing Parallel Routes Issues (OneUptime, Jan 2026)</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Deep-dive exercise: photo-feed modal with five failure modes</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build the canonical pattern</h5>
+          <p>Create <code>app/feed/page.tsx</code>, <code>app/feed/@modal/default.tsx</code> (returns <code>null</code>), <code>app/feed/@modal/(.)photos/[id]/page.tsx</code>. Confirm soft navigation opens the modal; direct nav to <code>/feed/photos/42</code> renders the full-page version.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger five failure modes</h5>
+          <ol>
+            <li>Move <code>photos/[id]</code> one level deeper, watch interception break. Fix by changing <code>(.)</code> to <code>(..)</code>.</li>
+            <li>Delete <code>default.tsx</code>. Navigate directly to <code>/feed</code> after visiting a photo URL. Observe the missing-slot error.</li>
+            <li>Add a Server Action inside the modal that updates a caption. Confirm modal re-renders without nav-blocking (use <code>router.refresh()</code> not <code>router.push()</code>).</li>
+            <li>Set <code>dynamicParams = false</code> on the feed page. Observe the Next 16 bug. Document the workaround.</li>
+            <li>Add stale slot state: soft-navigate away, navigate back, observe the stale modal content. Resolve.</li>
+          </ol>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>Modal opens/closes correctly on both soft and hard navigation. No slot-rendering errors. <code>next build</code> completes without warnings.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+</section>
+
+<section class="phase" id="phase-4">
+  <h2>Phase 4 — Auth.js v5 (~2 days, ~5 hours)</h2>
+  <div class="alert warn">
+    <strong>2026 context:</strong> Auth.js was handed to the Better Auth team on Sep 22, 2025. authjs.dev now shows a banner; the official site hosts a <a href="https://authjs.dev/getting-started/migrate-to-better-auth" target="_blank" rel="noopener">migrate-to-Better-Auth guide</a>. For greenfield work, prefer Better Auth. Your team is on Auth.js, so you learn it as-shipped.
+  </div>
+
+  <article class="concept" id="c31-auth-scaffold">
+    <div class="concept-head">
+      <h3>31. <code>auth.ts</code> + GitHub provider scaffold</h3>
+      <div class="concept-meta">
+        <span class="tag">60 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c31-auth-scaffold" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>GitHub OAuth App registration alone takes ~15 minutes cold.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://authjs.dev/getting-started/installation" target="_blank" rel="noopener">authjs.dev installation</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: wire GitHub-only, register the OAuth App</summary>
+      <div class="exercise-body">
+        <div class="exercise-step prereq">
+          <h5>Prereq</h5>
+          <p>Register GitHub OAuth App with callback <code>http://localhost:3000/api/auth/callback/github</code> (covered in the Prerequisites section).</p>
+        </div>
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Export <code>{ handlers, auth, signIn, signOut }</code> from <code>auth.ts</code>. Mount at <code>app/api/auth/[...nextauth]/route.ts</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p><code>/api/auth/providers</code> returns GitHub. <code>/api/auth/signin</code> shows the button. Sign in flow completes round trip to GitHub.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c32-auth-everywhere">
+    <div class="concept-head">
+      <h3>32. <code>auth()</code> everywhere + the missing-<code>auth()</code> failure</h3>
+      <div class="concept-meta">
+        <span class="tag">30 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c32-auth-everywhere" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Universal session reader replaces v4's <code>getServerSession</code>, <code>getToken</code>, <code>withAuth</code>.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://authjs.dev/getting-started/session-management/get-session" target="_blank" rel="noopener">Session management — getSession</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: three pages call auth(), then strip one</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>An RSC, a Server Action, and a Route Handler all call <code>await auth()</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Strip the check</h5>
+          <p>Remove <code>auth()</code> from the Server Action. Trigger from unauthenticated client via curl (<a href="#c28-server-action-security">see #28's playbook</a>). <strong>The action still fires.</strong></p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Re-add and verify</h5>
+          <p>Re-add the check, observe 401. <code>auth()</code> isn't a wrapper; it's a check you must invoke in every entry point.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c33-edge-split">
+    <div class="concept-head">
+      <h3>33. Edge config split</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c33-edge-split" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Slim <code>auth.config.ts</code> (no DB / Node-only deps) for edge; full <code>auth.ts</code> for Node. Note: if your Next is 16+ and <code>proxy.ts</code> runs Node-runtime only, the split may be unnecessary in theory, but it's still good hygiene.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://authjs.dev/guides/edge-compatibility" target="_blank" rel="noopener">authjs.dev/guides/edge-compatibility</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: break it deliberately, observe the error</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Create both files. Middleware/proxy imports only from <code>auth.config.ts</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger</h5>
+          <p>Import <code>auth.ts</code> (with Prisma adapter) from middleware. Observe the edge-incompatibility error verbatim.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Fix</h5>
+          <p>Revert to importing only the config. Confirm middleware bundles without Prisma.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c34-session-strategy">
+    <div class="concept-head">
+      <h3>34. Session strategy: JWT vs database, observe the difference</h3>
+      <div class="concept-meta">
+        <span class="tag">30 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c34-session-strategy" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Credentials provider forces JWT. JWT = stateless, no instant revocation, large cookies. Database = instant revocation, DB hit per request.</p>
+    <details class="exercise">
+      <summary>Exercise: instrument both modes with a counter</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Branch the project: JWT strategy in one, database in the other. Instrument the <code>jwt</code> callback with a counter that logs every fire.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Drive and observe</h5>
+          <p>Sign in, refresh, navigate, call an RSC. <strong>JWT branch:</strong> counter fires on every request. <strong>Database branch:</strong> counter fires only on sign-in. The trade-off: one DB hit per session read (database) versus stateless tokens you can't revoke instantly (JWT).</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c35-prisma-adapter">
+    <div class="concept-head">
+      <h3>35. Prisma adapter schema + Account vs Session table</h3>
+      <div class="concept-meta">
+        <span class="tag">30 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c35-prisma-adapter" aria-label="Mark complete">
+      </div>
+    </div>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://authjs.dev/getting-started/adapters/prisma" target="_blank" rel="noopener">Prisma adapter docs</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: inspect Account vs Session table behavior</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Migrate the adapter schema. Sign in with GitHub.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify in psql</h5>
+          <p>Inspect the <code>Account</code> table and confirm <code>access_token</code> is stored. Toggle to JWT strategy and re-sign-in: <code>Session</code> empty, <code>Account</code> still populated.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept trophy" id="c36-callbacks">
+    <div class="concept-head">
+      <h3>⭐ 36. The callbacks pattern: flip the order</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c36-callbacks" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>The most common "my role is undefined" cause: setting a field in the <code>session</code> callback without first putting it on <code>token</code> in the <code>jwt</code> callback.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://authjs.dev/guides/extending-the-session" target="_blank" rel="noopener">Extending the session</a> + <a href="https://authjs.dev/guides/role-based-access-control" target="_blank" rel="noopener">Role-based access control</a></div>
+      </div>
+    </div>
+    <details class="exercise" open>
+      <summary>Exercise: set role correctly, then flip the order to reproduce undefined</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Add <code>role</code> to <code>User</code>. In <code>jwt</code>: <code>if (user) token.role = user.role</code>. In <code>session</code>: <code>session.user.role = token.role</code>. Verify <code>await auth()</code> returns <code>session.user.role</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Flip the order</h5>
+          <p>Set <code>role</code> only in <code>session</code>, not <code>jwt</code>. Observe <code>undefined</code>. The session callback can only see what jwt put on <code>token</code>.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c37-jwe-jws">
+    <div class="concept-head">
+      <h3>37. JWE vs JWS: make the decoders disagree</h3>
+      <div class="concept-meta">
+        <span class="tag">10 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c37-jwe-jws" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Auth.js session cookies are encrypted <strong>JWE (A256CBC-HS512)</strong>, not signed JWS. <code>hono/jwt</code> only handles signed JWS.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://workos.com/blog/jws-jwe-jwk-jwks-explained" target="_blank" rel="noopener">WorkOS — JWE/JWS/JWK/JWKS explained (March 2025)</a></div>
+        <div class="resource-meta">Read before any Phase 5 exercise.</div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: make jwt.verify fail, then decode with @auth/core/jwt</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Grab the cookie</h5>
+          <p>From the browser, copy the raw <code>authjs.session-token</code> value.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Try jsonwebtoken</h5>
+          <p><code>jwt.verify(cookie, AUTH_SECRET)</code> from <code>jsonwebtoken</code>. It fails: it can't parse a 5-part JWE.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Decode correctly</h5>
+          <p>Call <code>decode({ token, secret, salt: 'authjs.session-token' })</code> from <code>@auth/core/jwt</code>. This succeeds. The <code>salt</code> is required; without it you'd hit an unhelpful decryption error.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c-d4-refresh-rotation">
+    <div class="concept-head">
+      <h3>Deep dive: Refresh token rotation + the race condition</h3>
+      <div class="concept-meta">
+        <span class="tag">90 min</span>
+        <span class="tag warn">DEPTH</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c-d4-refresh-rotation" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>OAuth access tokens expire in 1 hour. Refresh tokens are single-use. If two parallel RSC fetches simultaneously hit an expired token, one refresh succeeds and the other gets a 400 because the token was already consumed. The Auth.js team explicitly acknowledges this has no built-in fix.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://authjs.dev/guides/refresh-token-rotation" target="_blank" rel="noopener">Auth.js — Refresh Token Rotation (official)</a> + <a href="https://medium.com/@elham1378basir/jwt-token-refresh-issue-in-auth-js-74ca5185476c" target="_blank" rel="noopener">JWT Refresh race condition (Medium)</a> + <a href="https://gist.github.com/Daanieeel/6e4d07bb797de96e469d2a1129bd3891" target="_blank" rel="noopener">Race-condition gist</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Deep-dive exercise: reproduce the race, then deduplicate</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Implement basic rotation</h5>
+          <p>Following the official docs. Set <code>access_type: 'offline'</code> and force a short access-token expiry (5 minutes).</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger the race</h5>
+          <p>Open two browser tabs. Wait for expiry. Trigger both tabs simultaneously. <strong>Observe that one tab gets <code>RefreshAccessTokenError</code> and is redirected to sign-in.</strong></p>
+        </div>
+        <div class="exercise-step">
+          <h5>Implement deduplication lock</h5>
+          <p>Module-level <code>Map&lt;string, Promise&lt;JWT&gt;&gt;</code> keyed on <code>sub</code>. Concurrent refreshes for the same user await the same in-flight request rather than each calling the provider.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Re-test + verify</h5>
+          <p>Two tabs, simultaneous. <strong>Only one provider call</strong> (log it). Both tabs succeed. Document why this fix doesn't work across multiple Node processes (serverless), and what the database session strategy alternative looks like.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+</section>
+
+<section class="phase" id="phase-5">
+  <h2>Phase 5 — Cross-service auth Next ↔ Hono (~3 days, ~6 hours)</h2>
+  <p>The most demanding phase.</p>
+
+  <div class="alert info">
+    <strong>Mandatory pre-reading (30 min):</strong> <a href="https://workos.com/blog/jws-jwe-jwk-jwks-explained" target="_blank" rel="noopener">WorkOS — JWE/JWS/JWK/JWKS explained</a>. Read before any exercise in this phase.
+  </div>
+
+  <article class="concept" id="c38-hs256">
+    <div class="concept-head">
+      <h3>38. Option 2a: HS256 + shared secret (the baseline that works)</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c38-hs256" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Acceptable for single-app internal use. Don't reach for it beyond that: a shared secret makes rotation painful.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://hono.dev/docs/middleware/builtin/jwt" target="_blank" rel="noopener">Hono JWT middleware</a> + jose for signing</div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: mint, verify, then trigger every failure mode</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>In the Auth.js <code>session</code> callback, mint a short-lived HS256 JWT (60s <code>exp</code>) signed with <code>process.env.API_SECRET</code>, <strong>not <code>AUTH_SECRET</code></strong>; it's a different trust boundary. Stamp <code>sub</code>, <code>roles</code>. Store on <code>session.apiToken</code>. RSC reads it, calls Hono with <code>Authorization: Bearer</code>. Hono <code>jwt()</code> middleware verifies.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger each failure</h5>
+          <ol>
+            <li>Sign with the wrong secret on Hono. It 401s.</li>
+            <li>Let the token expire, and the next request 401s.</li>
+            <li>Pass a tampered token; again, 401.</li>
+          </ol>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept trophy" id="c39-jwks">
+    <div class="concept-head">
+      <h3>⭐ 39. Option 2b: RS256 + JWKS + rotation</h3>
+      <div class="concept-meta">
+        <span class="tag">120 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c39-jwks" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>The production default for cross-service auth. You wire all five moving parts yourself: <code>openssl</code> key generation, the JWKS endpoint shape, <code>kid</code> matching, the <code>jose</code> verify API, and Hono's <code>jwk()</code> middleware.</p>
+    <div class="alert danger">
+      <strong>Security:</strong> Ensure Hono ≥ 4.11.4 (advisory <a href="https://github.com/honojs/hono/security/advisories/GHSA-3vhc-576x-3qv4" target="_blank" rel="noopener">GHSA-3vhc-576x-3qv4 / CVE-2026-22818</a>). Always pin <code>alg: ['RS256']</code> server-side.
+    </div>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://workos.com/blog/how-to-verify-jwts-in-nextjs-app-router" target="_blank" rel="noopener">WorkOS — Verifying JWTs in Next.js App Router (2025)</a> + <a href="https://hono.dev/docs/middleware/builtin/jwk" target="_blank" rel="noopener">Hono JWK middleware</a></div>
+      </div>
+    </div>
+    <details class="exercise" open>
+      <summary>Exercise: two-stage, end-to-end then rotate</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Stage 1: end-to-end (60 min)</h5>
+          <p>Generate RSA key pair with <code>openssl genrsa</code> (do NOT generate at runtime, or restarts lose the key). Store private + public as PEM strings in env vars. Implement <code>/api/jwks</code> Route Handler returning <code>{ keys: [exportedJwk] }</code> via <code>jose.exportJWK</code>. In <code>session</code> callback, sign with <code>new SignJWT({ sub, roles })</code>, set protected header <code>{ alg: 'RS256', kid: 'k1' }</code>, set <code>iss</code>, <code>aud: 'hono-api'</code>, 5-min <code>exp</code>. RSC calls Hono with the resulting Bearer. Hono <code>jwk()</code> middleware with <code>jwks_uri</code> + <code>alg: ['RS256']</code> verifies. Confirm end-to-end works.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Stage 2: rotation (60 min)</h5>
+          <p>Generate a second key pair (<code>kid: 'k2'</code>). Expose both in JWKS. Start signing with <code>k2</code>. Confirm old <code>k1</code>-signed tokens still verify (still in JWKS). Remove <code>k1</code> from JWKS after the longest-lived <code>k1</code> token expires. The <code>kid</code> header lets the verifier pick the matching key during the overlap window, which is what enables zero-downtime rotation.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c40-cookie-forward">
+    <div class="concept-head">
+      <h3>40. Option 1: forward session cookie (escape hatch)</h3>
+      <div class="concept-meta">
+        <span class="tag">30 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c40-cookie-forward" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Use this for prototypes only; stop here and you never reach the proper JWKS pattern. The docs warn that <code>@auth/core/jwt</code> "will be refactored/changed", so don't build production on it.</p>
+    <details class="exercise">
+      <summary>Exercise: forward + decode with salt</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Server Action reads <code>authjs.session-token</code> cookie. POST to Hono in a custom header. On Hono: <code>decode({ token, secret: process.env.AUTH_SECRET, salt: 'authjs.session-token' })</code> from <code>@auth/core/jwt</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p>Returns the same payload <code>auth()</code> returns in Next.js. Note the coupling.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept trophy" id="c41-sse-break">
+    <div class="concept-head">
+      <h3>⭐ 41. Server-only model breaks: SSE from Hono</h3>
+      <div class="concept-meta">
+        <span class="tag">45 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c41-sse-break" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Real-time features break the server-to-server-only model: the browser holds no Bearer token. No single resource covers this for the Next+Hono pairing, so you build it here.</p>
+    <details class="exercise">
+      <summary>Exercise: observe the model break, then implement the escape</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build Hono SSE endpoint</h5>
+          <p><code>text/event-stream</code>, push messages on a 1s interval.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger both failure paths</h5>
+          <p>Try to consume it from a Server Action; it fails, because SSE is browser-direct and you can't stream back through an action. Switch to a <code>&lt;LiveFeed&gt;</code> Client Component using <code>EventSource</code>. Now the browser has no Bearer token to pass.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Implement the resolution</h5>
+          <p>Add <code>/api/sse-token</code> in Next that calls <code>auth()</code> server-side and returns a short-lived token (in-memory cache or signed JWT). Client Component fetches this first, then opens <code>EventSource</code> with the token. Use <code>event-source-polyfill</code> for header support, or pass the token as a <code>?token=</code> query Hono can validate. <strong>Never store the token in <code>localStorage</code>; it's XSS-readable.</strong></p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c42-cors-csrf">
+    <div class="concept-head">
+      <h3>42. CORS / CSRF realities</h3>
+      <div class="concept-meta">
+        <span class="tag">20 min</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c42-cors-csrf" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Server-to-server (Next server → Hono): no browser cookies, no CSRF surface. Browser → Hono (cross-origin): CORS required. Server Actions are Origin-checked (not token-CSRF).</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://hono.dev/docs/middleware/builtin/cors" target="_blank" rel="noopener">Hono CORS middleware</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Exercise: hit the wildcard-with-credentials block</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build</h5>
+          <p>Call your Hono endpoint from a Client Component with <code>fetch(..., { credentials: 'include' })</code>. Observe CORS preflight failure. Add Hono <code>cors({ origin: 'http://localhost:3000', credentials: true, allowHeaders: ['Authorization', 'Content-Type'] })</code>. Confirm it works.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Try wildcard with credentials</h5>
+          <p>Set <code>origin: '*'</code> with <code>credentials: true</code> and observe the browser block it. The spec forbids the combination.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="concept" id="c-d5-jwt-revocation">
+    <div class="concept-head">
+      <h3>Deep dive: JWT revocation via Redis JTI blocklist</h3>
+      <div class="concept-meta">
+        <span class="tag">90 min</span>
+        <span class="tag warn">DEPTH</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c-d5-jwt-revocation" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>Stateless JWTs cannot be revoked without infrastructure. This is a day-one production problem: an admin bans a user or a password changes, but Hono keeps accepting their tokens for up to the TTL. The standard answer is a Redis JTI blocklist, though integrating it into Hono middleware without adding &gt;0.5ms is non-trivial.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://oneuptime.com/blog/post/2026-03-31-redis-how-to-build-a-token-blacklist-for-jwt-revocation-with-redis/view" target="_blank" rel="noopener">OneUptime — Token Blacklist for JWT Revocation with Redis (March 2026)</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Deep-dive exercise: JTI blocklist + user-level revocation + p99 benchmark</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Add jti everywhere</h5>
+          <p><code>jti = crypto.randomUUID()</code> in the <code>jwt</code> callback. Hono verification middleware reads it.</p>
+        </div>
+        <div class="exercise-step">
+          <h5>Redis JTI blocklist</h5>
+          <p>Add a Redis client (Upstash or local; the prereqs docker-compose has Redis ready). In Hono middleware after signature verification, call <code>redis.get(jti)</code> and 401 if it exists. Add <code>POST /admin/revoke</code>: <code>redis.set(jti, '1', { ex: remainingTtl })</code>, with the TTL matching token lifetime so Redis auto-cleans.</p>
+        </div>
+        <div class="exercise-step">
+          <h5>User-level revocation</h5>
+          <p>Add <code>SET user:revoke:{sub} {timestamp}</code>. Middleware also checks <code>iat &lt; user_revoke_timestamp</code>. Changing a user's password updates the timestamp → invalidates all their outstanding tokens.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Benchmark p99</h5>
+          <p>With <code>autocannon</code>: measure baseline vs. with Redis check vs. with a module-level Bloom filter warm cache. <strong>Target: Redis round-trip &lt; 0.5ms added latency at p99.</strong></p>
+        </div>
+      </div>
+    </details>
+  </article>
+</section>
+
+<section class="phase" id="phase-6">
+  <h2>Phase 6 — Production hardening (~2 days)</h2>
+  <p>Resources are in <code>ROADMAP.md</code>. Lee Robinson's <a href="https://www.youtube.com/watch?v=sIVL4JMqRfc" target="_blank" rel="noopener">Self-Hosting Next.js</a> (Oct 2024, mechanics unchanged) covers Docker + Postgres + Nginx + <code>output: 'standalone'</code> + Prisma binary targets.</p>
+  <div class="video-embed">
+    <iframe loading="lazy" src="https://www.youtube.com/embed/sIVL4JMqRfc" title="Self-Hosting Next.js" allowfullscreen></iframe>
+  </div>
+
+  <article class="concept" id="c-d6-distroless">
+    <div class="concept-head">
+      <h3>Deep dive: Distroless Docker + Prisma binary targets</h3>
+      <div class="concept-meta">
+        <span class="tag">90 min</span>
+        <span class="tag warn">DEPTH</span>
+        <input type="checkbox" class="concept-checkbox" data-concept-id="c-d6-distroless" aria-label="Mark complete">
+      </div>
+    </div>
+    <p>One non-obvious failure: Prisma's query engine is a native binary. Copy <code>node_modules</code> from the Debian builder into distroless without explicit <code>binaryTargets</code> in <code>schema.prisma</code>, and the runtime fails with <code>PrismaClientInitializationError: Query engine binary not found</code>. Building for arm64 on amd64 without <code>--platform</code> produces the same failure for a different reason.</p>
+    <div class="resource">
+      <div class="resource-icon">📄</div>
+      <div class="resource-content">
+        <div class="resource-title"><a href="https://www.prisma.io/docs/guides/docker" target="_blank" rel="noopener">Prisma — Use in Docker (official)</a> + <a href="https://blog.arcjet.com/security-advice-for-self-hosting-next-js-in-docker/" target="_blank" rel="noopener">Arcjet — Security for self-hosting Next.js in Docker</a></div>
+      </div>
+    </div>
+    <details class="exercise">
+      <summary>Deep-dive exercise: distroless + multi-arch + healthcheck</summary>
+      <div class="exercise-body">
+        <div class="exercise-step">
+          <h5>Build multi-stage</h5>
+          <p><code>node:20-slim</code> builder, <code>gcr.io/distroless/nodejs20-debian12:nonroot</code> runner. Run <code>next build</code> and <code>prisma generate</code> in builder.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger binary-not-found</h5>
+          <p>Copy output to runner. <code>docker run</code>. Observe <code>PrismaClientInitializationError</code>. Diagnose: engine was generated for <code>debian-openssl-3.0.x</code> but distroless lacks OpenSSL runtime path.</p>
+        </div>
+        <div class="exercise-step">
+          <h5>Fix with binaryTargets</h5>
+          <p>Add to <code>schema.prisma</code>: <code>binaryTargets = ["native", "debian-openssl-3.0.x"]</code>. Regenerate. Confirm correct binary at <code>node_modules/.prisma/client/</code>.</p>
+        </div>
+        <div class="exercise-step failure">
+          <h5>Trigger cross-platform failure</h5>
+          <p>Build for <code>linux/arm64</code> on amd64 CI: <code>docker buildx build --platform linux/arm64</code>. Observe a new failure. Fix by adding <code>"linux-arm64-openssl-3.0.x"</code> to <code>binaryTargets</code>.</p>
+        </div>
+        <div class="exercise-step verify">
+          <h5>Verify</h5>
+          <p><code>docker run</code> succeeds on both amd64 and arm64. Image &lt; 300 MB. Add a <code>HEALTHCHECK</code> running <code>prisma db ping</code> to surface engine failures before traffic.</p>
+        </div>
+      </div>
+    </details>
+  </article>
+</section>
+
+<section id="reading">
+  <h2>Final reading list</h2>
+  <h3>Phase 1 / Hono</h3>
+  <ol>
+    <li><a href="https://hono.dev/docs/guides/best-practices" target="_blank" rel="noopener">Hono Best Practices</a> + <a href="https://hono.dev/docs/guides/validation" target="_blank" rel="noopener">Validation</a> + <a href="https://hono.dev/docs/guides/testing" target="_blank" rel="noopener">Testing</a> + <a href="https://hono.dev/docs/guides/rpc" target="_blank" rel="noopener">RPC</a> + <a href="https://hono.dev/docs/api/context" target="_blank" rel="noopener">Context</a> + <a href="https://hono.dev/docs/api/exception" target="_blank" rel="noopener">HTTPException</a></li>
+    <li><a href="https://www.youtube.com/watch?v=4ks1RvEM99Y" target="_blank" rel="noopener">Yusuke Wada — The Creator of Hono on Bringing It to Node.js</a> (GitNation Node Congress 2025, 15 min)</li>
+    <li><a href="https://www.totaltypescript.com/tsconfig-cheat-sheet" target="_blank" rel="noopener">Matt Pocock — TSConfig cheat sheet</a></li>
+  </ol>
+  <h3>Phase 2 / Prisma</h3>
+  <ol start="4">
+    <li><a href="https://www.prisma.io/docs/orm/prisma-migrate/understanding-prisma-migrate/mental-model" target="_blank" rel="noopener">Prisma Migrate mental model + Shadow DB</a></li>
+    <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries" target="_blank" rel="noopener">Relation queries</a> + <a href="https://www.prisma.io/docs/orm/prisma-client/queries/transactions" target="_blank" rel="noopener">Transactions</a></li>
+    <li><a href="https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/databases-connections/pgbouncer" target="_blank" rel="noopener">PgBouncer footguns</a></li>
+  </ol>
+  <h3>Phase 3 / Next.js</h3>
+  <ol start="7">
+    <li><a href="https://nextjs.org/docs/app/getting-started/server-and-client-components" target="_blank" rel="noopener">Server and Client Components (v16.2.6)</a></li>
+    <li><a href="https://nextjs.org/docs/app/getting-started/caching" target="_blank" rel="noopener">Caching getting-started</a> + <a href="https://nextjs.org/docs/app/api-reference/directives/use-cache" target="_blank" rel="noopener"><code>use cache</code> API reference</a></li>
+    <li><a href="https://nextjs.org/docs/app/guides/data-security" target="_blank" rel="noopener">Data Security</a></li>
+    <li><a href="https://nextjs.org/docs/app/guides/upgrading/version-16" target="_blank" rel="noopener">Upgrading to v16: the full breaking-changes reference</a></li>
+    <li><a href="https://vercel.com/academy/nextjs-foundations/cache-components" target="_blank" rel="noopener">Vercel Academy — Cache Components</a></li>
+  </ol>
+  <h3>Phase 4 / Auth.js</h3>
+  <ol start="12">
+    <li><a href="https://authjs.dev/getting-started/installation" target="_blank" rel="noopener">authjs.dev — installation + adapters/prisma + extending-the-session + role-based-access-control</a></li>
+    <li><a href="https://better-auth.com/blog/authjs-joins-better-auth" target="_blank" rel="noopener">Better Auth handover blog</a>: context for why this stack is in maintenance</li>
+  </ol>
+  <h3>Phase 5 / Cross-service</h3>
+  <ol start="14">
+    <li><a href="https://workos.com/blog/jws-jwe-jwk-jwks-explained" target="_blank" rel="noopener">WorkOS — JWE/JWS/JWK/JWKS</a></li>
+    <li><a href="https://workos.com/blog/how-to-verify-jwts-in-nextjs-app-router" target="_blank" rel="noopener">WorkOS — Verifying JWTs in Next.js App Router</a></li>
+    <li><a href="https://hono.dev/docs/middleware/builtin/jwk" target="_blank" rel="noopener">Hono JWK middleware</a> (requires Hono ≥ 4.11.4, CVE-2026-22818)</li>
+  </ol>
+  <p style="margin-top: 2rem;"><strong>Paid spend:</strong> one Frontend Masters month ($39) covers the one paid resource worth buying here, <a href="https://frontendmasters.com/courses/next-js-v4/" target="_blank" rel="noopener">Next.js Fundamentals v4 (Scott Moss)</a>. Overlay Vercel Academy's Cache Components lesson on top, because Scott Moss's course is pre-Next-16.</p>
+</section>
+
+<footer class="page-footer">
+  <p>Companion to <code>ROADMAP.md</code>.</p>
+  <p>Progress is stored locally in your browser via <code>localStorage</code>; clearing site data resets your checkboxes.</p>
+</footer>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-jsx.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-tsx.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-lua.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sql.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-powershell.min.js"></script>
+<script>
+// ---- Tab switcher ----
+// Supports multiple independent tab groups via data-* attributes.
+// Pattern: data-tab="vscode" → content id="editor-vscode"
+//          data-orchestration="aspire" → content id="orchestration-aspire"
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    // Detect which data-* attribute drives this tab group
+    const dataAttr = Object.keys(btn.dataset)[0];      // "tab" | "orchestration" | etc
+    const target = btn.dataset[dataAttr];
+    const idPrefix = dataAttr === "tab" ? "editor-" : (dataAttr + "-");
+    const targetId = idPrefix + target;
+    // Scope: only switch siblings in the same group
+    const group = btn.parentElement;                    // the <div class="tabs">
+    const contentRoot = group.parentElement;
+    group.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b === btn));
+    contentRoot.querySelectorAll(":scope > .tab-content").forEach(c => {
+      c.classList.toggle("active", c.id === targetId);
+    });
+  });
+});
+
+// ---- Progress tracking via localStorage ----
+const STORAGE_KEY = "curriculum-progress-v1";
+function loadProgress() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
+}
+function saveProgress(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+function updateProgressBar() {
+  const checkboxes = document.querySelectorAll(".concept-checkbox");
+  const total = checkboxes.length;
+  const done = [...checkboxes].filter(c => c.checked).length;
+  const fill = document.getElementById("progress-fill");
+  const cnt = document.getElementById("progress-count");
+  const tot = document.getElementById("progress-total");
+  if (cnt) cnt.textContent = done;
+  if (tot) tot.textContent = total;
+  if (fill) fill.style.width = total ? (done * 100 / total) + "%" : "0%";
+}
+function initCheckboxes() {
+  const state = loadProgress();
+  document.querySelectorAll(".concept-checkbox").forEach(cb => {
+    const id = cb.dataset.conceptId;
+    if (id && state[id]) cb.checked = true;
+    // Give each checkbox a meaningful aria-label (was all "Mark complete")
+    const heading = cb.closest(".concept")?.querySelector("h3")?.textContent?.trim();
+    if (heading) cb.setAttribute("aria-label", "Mark complete: " + heading);
+    cb.addEventListener("change", () => {
+      const s = loadProgress();
+      if (cb.checked) s[id] = Date.now(); else delete s[id];
+      saveProgress(s);
+      updateProgressBar();
+    });
+  });
+  updateProgressBar();
+}
+
+// ---- Sidebar active-section highlight via IntersectionObserver ----
+function initActiveNav() {
+  // Include article[id] so concept-level sub-nav goes active on scroll
+  const sections = document.querySelectorAll("section[id], h2[id], h3[id], article[id]");
+  const links = document.querySelectorAll("#sidebar nav a");
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id;
+        links.forEach(l => l.classList.toggle("active", l.getAttribute("href") === "#" + id));
+      }
+    });
+  }, { rootMargin: "-20% 0px -70% 0px" });
+  sections.forEach(s => obs.observe(s));
+}
+
+// ---- Auto-populate phase sub-nav from concept titles ----
+function populatePhaseNav() {
+  document.querySelectorAll("section.phase").forEach(phase => {
+    const phaseId = phase.id;
+    const navList = document.getElementById("nav-" + phaseId);
+    if (!navList) return;
+    phase.querySelectorAll("article.concept").forEach(c => {
+      const id = c.id;
+      const title = c.querySelector("h3")?.textContent?.trim() || id;
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = "#" + id;
+      a.textContent = title.replace(/^⭐\s*/, "");
+      li.appendChild(a);
+      navList.appendChild(li);
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  populatePhaseNav();
+  initCheckboxes();
+  initActiveNav();
+  if (window.Prism) Prism.highlightAll();
+});
+</script>
+
+</body>
+</html>

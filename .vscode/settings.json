@@ -1,0 +1,50 @@
+{
+  // ── Project-shared settings — commit this file ──
+  // Personal taste (theme, icons, font) does NOT belong here.
+  // See ../vscode-user-settings.example.jsonc for that.
+
+  // Use the project's TypeScript, not VSCode's bundled version
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  // Prefer path-alias imports (e.g. "@/lib/x") over deep relative paths
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+
+  // Format on save: Prettier formats, ESLint auto-fixes
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // Prisma ships its own formatter for .prisma files
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+
+  // Tailwind autocomplete inside cn()/clsx()/cva() helper calls
+  "tailwindCSS.experimental.classRegex": [
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+  ],
+  // Needed so Tailwind suggestions show up inside strings
+  "editor.quickSuggestions": {
+    "strings": "on"
+  },
+
+  // Cleaner explorer: nest generated/related files under their parent
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "package.json": "package-lock.json, pnpm-lock.yaml, yarn.lock, .npmrc, bun.lockb",
+    ".env": ".env.*",
+    "tsconfig.json": "tsconfig.*.json",
+    "next.config.*": "next-env.d.ts, next.config.*"
+  },
+
+  // Don't index build output / deps
+  "search.exclude": {
+    "**/.next": true,
+    "**/node_modules": true,
+    "**/dist": true
+  }
+}

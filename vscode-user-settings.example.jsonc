@@ -1,0 +1,53 @@
+// ─────────────────────────────────────────────────────────────────────────
+//  PERSONAL User settings — these follow YOU across every project.
+//
+//  This is a reference file. Copy the entries below into your real User
+//  settings (NOT into .vscode/, or you'd force your theme on teammates):
+//
+//    Ctrl+Shift+P  →  "Preferences: Open User Settings (JSON)"
+//    File lives at: %APPDATA%\Code\User\settings.json
+//
+//  Install the theme + icon extensions first:
+//    ext install zhuangtongfa.material-theme   (One Dark Pro)
+//    ext install PKief.material-icon-theme      (Material Icons)
+// ─────────────────────────────────────────────────────────────────────────
+{
+  // Theme + icons (your pick: Atom One Dark via One Dark Pro)
+  "workbench.colorTheme": "One Dark Pro",
+  // alternatives: "One Dark Pro Darker" / "One Dark Pro Flat"
+  "workbench.iconTheme": "material-icon-theme",
+
+  // Editor font — ligatures optional. Install one of these fonts first,
+  // or delete fontFamily to keep the default.
+  "editor.fontFamily": "'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
+  "editor.fontLigatures": true,
+  "editor.fontSize": 14,
+  "editor.lineHeight": 1.6,
+
+  // Personal format-on-save preference (the .vscode/ file also sets this
+  // per-project, but having it here covers projects that don't)
+  "editor.formatOnSave": true,
+
+  // Long-session comfort
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.cursorBlinking": "smooth",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.renderWhitespace": "boundary",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  // You're dropping vim motions — these native multi-cursor habits replace
+  // most of what you'd miss (no extension needed):
+  //   Ctrl+D            select next occurrence of word
+  //   Ctrl+Shift+L      select ALL occurrences
+  //   Alt+Click         add a cursor anywhere
+  //   Alt+Up / Alt+Down move line up/down
+  //   Shift+Alt+Up/Down copy line up/down
+  //   Ctrl+/            toggle comment
+  "editor.multiCursorModifier": "alt",
+
+  // Terminal — where Claude Code lives
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.fontSize": 13
+}

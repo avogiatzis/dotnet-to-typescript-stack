@@ -1,0 +1,12 @@
+{
+  // VSCode prompts to install these when the repo is opened.
+  // Project tooling only — theme/icons are personal, kept in User settings.
+  "recommendations": [
+    "dbaeumer.vscode-eslint",      // ESLint
+    "esbenp.prettier-vscode",      // Prettier (default formatter)
+    "Prisma.prisma",               // Prisma schema support
+    "bradlc.vscode-tailwindcss",   // Tailwind IntelliSense
+    "yoavbls.pretty-ts-errors",    // readable TS error messages
+    "usernamehw.errorlens"         // inline errors (optional — can be noisy)
+  ]
+}
